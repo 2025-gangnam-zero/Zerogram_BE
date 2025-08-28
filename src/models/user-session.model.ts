@@ -1,18 +1,18 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { UserSessionState } from "types";
 
 const UserSessionSchema = new mongoose.Schema<UserSessionState>(
   {
-    user: {
-      type: Types.ObjectId,
+    userId: {
+      type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-    accessToken: {
+    access_token: {
       type: String,
       required: true,
     },
-    refreshToken: {
+    refresh_token: {
       type: String,
       required: true,
     },

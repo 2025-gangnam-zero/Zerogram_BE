@@ -1,5 +1,13 @@
-export * from "./diet.repository";
-export * from "./meeting.repository";
-export * from "./user-session.repository";
-export * from "./user.repository";
-export * from "./workout.repository";
+import dietRepository from "./diet.repository";
+import meetingRepository from "./meeting.repository";
+import userRepository from "./user.repository";
+import userSessionRepository from "./user-session.repository";
+import workoutRepository from "./workout.repository";
+
+export {
+  dietRepository,
+  meetingRepository,
+  userRepository,
+  userSessionRepository,
+  workoutRepository,
+};
