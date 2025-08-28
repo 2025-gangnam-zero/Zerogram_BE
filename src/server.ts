@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes";
+import { errorHandler } from "./middlewares";
 
 const env = process.env.NODE_ENV || "local";
 
@@ -22,3 +23,5 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.listen(PORT, () => console.log(`서버가 ${PORT} 포트에 연결됨`));
+
+app.use(errorHandler);
