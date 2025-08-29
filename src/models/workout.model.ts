@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { WorkoutState } from "types/workout.type";
+import { WorkoutState } from "../types";
 
 const WorkoutSchema = new mongoose.Schema<WorkoutState>(
   {},

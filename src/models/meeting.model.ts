@@ -1,5 +1,24 @@
-import mongoose from "mongoose";
-import { MeetingState } from "types/meeting.type";
+import mongoose, { Schema } from "mongoose";
+import { MeetingState, ReplyState } from "../types";
+
+const ReplySchema = new mongoose.Schema<ReplyState>({
+  meetingId: {
+    type: Schema.Types.ObjectId,
+    ref: "Meeting",
+    required: true,
+  },
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  text: {
+    type: String,
+    required: true,
+  },
+});
+
+export const Reply = mongoose.model("Reply", ReplySchema);
 
 const MeetingSchema = new mongoose.Schema<MeetingState>(
   {
@@ -32,6 +51,15 @@ const MeetingSchema = new mongoose.Schema<MeetingState>(
         minute: Number,
       },
       required: true,
+    },
+    participants: {
+      type: [Schema.Types.ObjectId],
+      ref: "User",
+      default: [],
+    },
+    replies: {
+      type: [ReplySchema],
+      default: [],
     },
   },
   {

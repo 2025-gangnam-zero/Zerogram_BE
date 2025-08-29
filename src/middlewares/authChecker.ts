@@ -46,15 +46,14 @@ export const authChecker = async (
         // 액세스 토큰 재발급
         const access_token = await jwtSign({ _id }, ACCESS_TOKEN_EXPIRESIN);
 
+        // 재발급된 액세스 토큰 업데이트
+        await userSessionService.updateAccessToken(_id, access_token);
+
         res.status(200).json({
           success: true,
           message: "액세스 토큰 재발급",
           code: "ACCESS_TOKEN_REISSUED",
           timestamp: new Date().toISOString(),
-          data: {
-            access_token,
-            sessionId,
-          },
         });
       } catch (err) {
         // 리프레시 토큰의 유효성이 만료된 경우 로그아웃

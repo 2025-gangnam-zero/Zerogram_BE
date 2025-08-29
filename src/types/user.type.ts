@@ -14,3 +14,13 @@ export interface UserState extends Document {
   weight: number;
   meetings: Types.ObjectId[];
 }
+
+export interface UserUpdateDto {
+  password?: string;
+  profile_image?: string;
+  favoriteSports?: string[];
+  address?: string;
+  height?: number;
+  weight?: number;
+  meetings?: Types.ObjectId[];
+}
