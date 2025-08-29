@@ -1,3 +1,5 @@
+import { Document } from "mongoose";
+
 export interface MeetingDateType {
   year: number;
   month: number;
@@ -6,7 +8,7 @@ export interface MeetingDateType {
   minute: number;
 }
 
-export interface MeetingState {
+export interface MeetingState extends Document {
   title: string;
   description: string;
   location: string;
