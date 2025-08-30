@@ -16,7 +16,7 @@ class DietRepository {
   }
 
   // 식단 일지 조회
-  async getDiteById(_id: Types.ObjectId): Promise<DietState | null> {
+  async getDietById(_id: Types.ObjectId): Promise<DietState | null> {
     try {
       const diet = await Diet.findById({ _id });
 
@@ -45,6 +45,27 @@ class DietRepository {
       return newMeal;
     } catch (error) {
       throw mongoDBErrorHandler("createMeal", error);
+    }
+  }
+
+  // 식단 추가
+  async addMeal(
+    dietId: Types.ObjectId,
+    meal: MealState
+  ): Promise<UpdateResult> {
+    try {
+      const result = await Diet.updateOne(
+        { _id: dietId },
+        {
+          $addToSet: {
+            meals: meal,
+          },
+        }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("addMeal", error);
     }
   }
 

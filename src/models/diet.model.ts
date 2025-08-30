@@ -1,4 +1,4 @@
-import mongoose, { Schema, Types } from "mongoose";
+import mongoose, { Schema } from "mongoose";
 import { DietState, MealState } from "../types";
 
 const MealSchema = new mongoose.Schema<MealState>(

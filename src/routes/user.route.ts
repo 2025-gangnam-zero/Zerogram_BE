@@ -6,11 +6,11 @@ import {
   deleteMe,
   deleteWorkoutById,
   getDietById,
-  getMeetingByEmail,
+  getMeetingById,
   getUserInfo,
   getWorkoutById,
   getWorkoutListById,
-  updateDietById,
+  updateDietFeedbackById,
   updateMe,
   updateWorkoutById,
 } from "../controllers";
@@ -29,9 +29,9 @@ export default () => {
   router.get("/users/me/diets", getDietById);
   router.post("/users/me/diets", createDiet);
   router.get("/users/me/diets/:dietid", getDietById);
-  router.patch("/users/me/diets/:dietid", updateDietById);
+  router.patch("/users/me/diets/:dietid", updateDietFeedbackById);
   router.delete("/users/me/diets/:dietid", deleteDietById);
-  router.get("/users/me/meetings", getMeetingByEmail);
+  router.get("/users/me/meetings", getMeetingById);
 
   return router;
 };
