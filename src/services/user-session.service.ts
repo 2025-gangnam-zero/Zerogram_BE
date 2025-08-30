@@ -1,7 +1,9 @@
 import { Types } from "mongoose";
 import { InternalServerError, NotFoundError } from "../errors";
 import { userSessionRepository } from "../repositories";
-import { UserSessionState } from "../types";
+import { UserSessionCreateDto, UserSessionState } from "../types";
+import { jwtSign } from "../utils";
+import { ACCESS_TOKEN_EXPIRESIN, REFRESH_TOKEN_EXPIRESIN } from "../constants";
 
 class UserSessionService {
   // 사용자 세션 조회
@@ -36,7 +38,7 @@ class UserSessionService {
     }
   }
 
-  // 액세스 토큰 업데잍 ㅡ
+  // 액세스 토큰 업데이트
   async updateAccessToken(
     _id: Types.ObjectId,
     access_token: string
@@ -54,6 +56,35 @@ class UserSessionService {
       if (result.modifiedCount === 0) {
         throw new InternalServerError("세션 변경 실패");
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 사용자 세션 생성
+  async createUserSession(_id: Types.ObjectId): Promise<UserSessionState> {
+    try {
+      // 액세스 토큰 생성
+      const access_token = await jwtSign(_id, ACCESS_TOKEN_EXPIRESIN);
+      // 리프레시 토큰 생성
+      const refresh_token = await jwtSign(_id, REFRESH_TOKEN_EXPIRESIN);
+
+      const newUserSession = {
+        userId: _id,
+        access_token,
+        refresh_token,
+      } as UserSessionCreateDto;
+
+      // 사용자 세션 생성
+      const userSession = await userSessionRepository.createUserSession(
+        newUserSession
+      );
+
+      if (!userSession) {
+        throw new InternalServerError("사용자 세션 생성 실패");
+      }
+
+      return userSession;
     } catch (error) {
       throw error;
     }

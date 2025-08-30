@@ -1,11 +1,5 @@
 import { Router } from "express";
-import {
-  getPasswordByEmail,
-  login,
-  logout,
-  oauth,
-  signup,
-} from "../controllers";
+import { resetPassword, login, logout, oauth, signup } from "../controllers";
 
 export default () => {
   const router = Router();
@@ -14,7 +8,7 @@ export default () => {
   router.get("/auth/oauth", oauth);
   router.post("/auth/login", login);
   router.post("/auth/logout", logout);
-  router.post("/auth/password", getPasswordByEmail);
+  router.post("/auth/reset-password", resetPassword);
 
   return router;
 };

@@ -1,11 +1,13 @@
-import { Types, Document } from "mongoose";
+import { Types } from "mongoose";
 
 export type GenderType = "m" | "f";
+export type RoleType = "USER" | "ADMIN";
 
-export interface UserState extends Document {
+export interface UserState {
+  _id: Types.ObjectId;
   name: string;
   email: string;
-  password: string;
+  password?: string;
   profile_image?: string;
   gender: GenderType;
   favoriteSports: string[];
@@ -13,6 +15,9 @@ export interface UserState extends Document {
   height: number;
   weight: number;
   meetings: Types.ObjectId[];
+  role: RoleType;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface UserUpdateDto {

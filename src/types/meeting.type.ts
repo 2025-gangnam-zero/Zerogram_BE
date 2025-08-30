@@ -1,4 +1,4 @@
-import { Document, Types } from "mongoose";
+import { Types } from "mongoose";
 
 export interface MeetingDateType {
   year: number;
@@ -8,7 +8,9 @@ export interface MeetingDateType {
   minute: number;
 }
 
-export interface MeetingState extends Document {
+export interface MeetingState {
+  _id: Types.ObjectId;
+  writer: Types.ObjectId;
   title: string;
   description: string;
   location: string;
@@ -17,6 +19,8 @@ export interface MeetingState extends Document {
   meeting_date: MeetingDateType;
   participants: Types.ObjectId[];
   replies: ReplyState[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface MeetingUpdateDto {
@@ -28,8 +32,11 @@ export interface MeetingUpdateDto {
   meeting_date?: MeetingDateType;
 }
 
-export interface ReplyState extends Document {
+export interface ReplyState {
+  _id: Types.ObjectId;
   meetingId: Types.ObjectId;
   userId: Types.ObjectId;
   text: string;
+  createdAt: Date;
+  updatedAt: Date;
 }

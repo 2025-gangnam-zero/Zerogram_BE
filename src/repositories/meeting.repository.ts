@@ -143,6 +143,17 @@ class MeetingRespository {
       throw mongoDBErrorHandler("deleteReply", error);
     }
   }
+
+  // 댓글 조회
+  async getReplyById(_id: Types.ObjectId): Promise<ReplyState | null> {
+    try {
+      const reply = await Reply.findById({ _id });
+
+      return reply;
+    } catch (error) {
+      throw mongoDBErrorHandler("getReplyById", error);
+    }
+  }
 }
 
 export default new MeetingRespository();

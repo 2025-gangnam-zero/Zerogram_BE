@@ -2,17 +2,17 @@ import { Router } from "express";
 import {
   createDiet,
   createWorkout,
-  deleteDietByEmail,
+  deleteDietById,
   deleteMe,
-  deleteWorkoutByEmail,
-  getDietByEmail,
+  deleteWorkoutById,
+  getDietById,
   getMeetingByEmail,
   getUserInfo,
-  getWorkoutByEmail,
-  getWorkoutsByEmail,
-  updateDietByEmail,
+  getWorkoutById,
+  getWorkoutListById,
+  updateDietById,
   updateMe,
-  updateWorkoutByEmail,
+  updateWorkoutById,
 } from "../controllers";
 
 export default () => {
@@ -21,16 +21,16 @@ export default () => {
   router.get("/users/me", getUserInfo);
   router.patch("/users/me", updateMe);
   router.delete("/users/me", deleteMe);
-  router.get("/users/me/workouts", getWorkoutsByEmail);
+  router.get("/users/me/workouts", getWorkoutListById);
   router.post("/users/me/workouts", createWorkout);
-  router.get("/users/me/workouts/:workoutid", getWorkoutByEmail);
-  router.patch("/users/me/workouts/:workoutid", updateWorkoutByEmail);
-  router.delete("/users/me/workouts/:workoutid", deleteWorkoutByEmail);
-  router.get("/users/me/diets", getDietByEmail);
+  router.get("/users/me/workouts/:workoutid", getWorkoutById);
+  router.patch("/users/me/workouts/:workoutid", updateWorkoutById);
+  router.delete("/users/me/workouts/:workoutid", deleteWorkoutById);
+  router.get("/users/me/diets", getDietById);
   router.post("/users/me/diets", createDiet);
-  router.get("/users/me/diets/:dietid", getDietByEmail);
-  router.patch("/users/me/diets/:dietid", updateDietByEmail);
-  router.delete("/users/me/diets/:dietid", deleteDietByEmail);
+  router.get("/users/me/diets/:dietid", getDietById);
+  router.patch("/users/me/diets/:dietid", updateDietById);
+  router.delete("/users/me/diets/:dietid", deleteDietById);
   router.get("/users/me/meetings", getMeetingByEmail);
 
   return router;

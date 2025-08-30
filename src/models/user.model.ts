@@ -41,6 +41,11 @@ const UserSchema = new mongoose.Schema<UserState>(
       type: [Types.ObjectId],
       default: [],
     },
+    role: {
+      type: String,
+      enum: ["USER", "ADMIN"],
+      default: "USER",
+    },
   },
   {
     versionKey: false,

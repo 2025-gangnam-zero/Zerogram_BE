@@ -6,14 +6,14 @@ import {
   getAllInfo,
   getMeetingById,
   getReplyById,
-  getUserInfoByEmail,
+  getUserInfoByUserId,
 } from "../controllers";
 
 export default () => {
   const router = Router();
 
   router.get("/admin/", getAllInfo);
-  router.get("/admin/users/:email", getUserInfoByEmail);
+  router.get("/admin/users/:email", getUserInfoByUserId);
   router.get("/admin/users/:email/meetings/:meetingid", getMeetingById);
   router.get(
     "/admin/users/:email/meetings/:meetingid/replies/:replyid",

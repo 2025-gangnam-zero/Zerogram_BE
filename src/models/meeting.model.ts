@@ -22,6 +22,11 @@ export const Reply = mongoose.model("Reply", ReplySchema);
 
 const MeetingSchema = new mongoose.Schema<MeetingState>(
   {
+    writer: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
     title: {
       type: String,
       required: true,
