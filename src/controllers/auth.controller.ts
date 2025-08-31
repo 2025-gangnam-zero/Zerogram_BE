@@ -1,12 +1,15 @@
 import { Request, Response } from "express";
-import { BadRequestError } from "../errors";
+import { BadRequestError, ForbiddenError } from "../errors";
 import { userService, userSessionService } from "../services";
-import { UserState } from "../types";
+import { OauthInfo, OauthType, UserState } from "../types";
+import { oauths } from "../data";
+import { OAUTH_REDIRECT_URI, OAUTH_GRANT_TYPE } from "../constants";
 
+// 회원 가입
 export const signup = async (req: Request, res: Response) => {
   const userInfo = req.body;
   try {
-    // 유효성 검사 추가
+    // 유효성 검사 추가 필요
 
     // 사용자 계정 생성
     await userService.createUser(userInfo as UserState);
@@ -22,6 +25,7 @@ export const signup = async (req: Request, res: Response) => {
   }
 };
 
+// 로그인
 export const login = async (req: Request, res: Response) => {
   const { email, pw } = req.body;
 
@@ -61,6 +65,7 @@ export const login = async (req: Request, res: Response) => {
   }
 };
 
+// 로그 아웃
 export const logout = async (req: Request, res: Response) => {
   const sessionId = req.sessionId;
   try {
@@ -78,14 +83,150 @@ export const logout = async (req: Request, res: Response) => {
   }
 };
 
+// 소셜 로그인
 export const oauth = async (req: Request, res: Response) => {
   try {
+    const { state, code } = req.query;
+
+    // state와 code를 전달 받지 못한 경우
+    if (!state || !code) {
+      throw new BadRequestError("소셜 타입과 code 필수");
+    }
+
+    // state를 통한 소셜 타입 확인
+    const oauthType = state.toString() as OauthType;
+
+    // 소셜 로그인 필요 정보 구조 분해
+    const { client_id, client_secret, token_url, userInfo_url } = oauths[
+      oauthType
+    ] as OauthInfo;
+
+    // 토큰 요청을 위한 필요 정보
+    const requestBody = {
+      code: code as string, // 인증 코드
+      client_id,
+      client_secret,
+      redirect_uri: OAUTH_REDIRECT_URI,
+      grant_type: OAUTH_GRANT_TYPE,
+    };
+
+    // 토큰 요청
+    try {
+      const response = await fetch(token_url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          Accept: "application/json",
+        },
+        body: new URLSearchParams(requestBody).toString(),
+      });
+
+      if (!response.ok) {
+        // 응답 본문을 텍스트로 가져오기
+        const errorText = await response.text();
+        console.error(`에러: ${response.status}, ${errorText}`);
+
+        throw new ForbiddenError("Oauth 액세스 토큰 취득 실패");
+      }
+
+      const result = await response.json();
+
+      // 소셜 액세스 토큰
+      const access_token = result.access_token;
+
+      // 사용자 정보 요청
+      try {
+        const response = await fetch(userInfo_url, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+
+        if (!response.ok) {
+          // 응답 본문을 텍스트로 가져오기
+          const errorText = await response.text();
+          console.error(`에러: ${response.status}, ${errorText}`);
+
+          throw new ForbiddenError("Oauth 사용자 정보 조회 실패");
+        }
+
+        const result = await response.json();
+
+        // 소셜 로그인 사용자 정보: 초기값
+        let oauthUserInfo: {
+          email: string;
+          name: string;
+          profile_image: string;
+        } = {
+          email: "",
+          name: "",
+          profile_image: "",
+        };
+
+        if (oauthType === "google") {
+          oauthUserInfo = {
+            email: result.email,
+            name: result.name,
+            profile_image: result.picture,
+          };
+        } else if (oauthType === "kakao") {
+          oauthUserInfo = {
+            email: result.kakao_account.email,
+            name: result.properities.nickname,
+            profile_image: result.properties.profile_image,
+          };
+        }
+
+        // 소셜 로그인 : 기존 사용자 여부 확인하고 정보 조회
+        const user = await userService.socialLogin(oauthUserInfo.email);
+
+        // 기존 사용자가 아닌 경우: 회원가입 진행
+        if (!user) {
+          res.status(200).json({
+            success: true,
+            message: "소셜 로그인 성공 및 회원가입 진행",
+            code: "SOCIAL_LOGIN_SUCCEEDED_AND_SIGN_UP_PROCEED",
+            timestamp: new Date().toISOString(),
+            data: {
+              userInfo: oauthUserInfo,
+            },
+          });
+          return;
+        }
+
+        // 사용자 세션 생성
+        const userSession = await userSessionService.createUserSession(
+          user._id
+        );
+
+        const { password, ...rest } = user;
+
+        // sessionId를 어떤 식으로 전달할지 결정 필요
+
+        // 응답
+        res.status(200).json({
+          success: true,
+          message: "소셜 로그인 성공",
+          code: "SOCIAL_LOGIN_SUCCEEDED",
+          timestamp: new Date().toISOString(),
+          data: {
+            user: rest,
+            sessionId: userSession._id, // 변경 될 수 있음
+          },
+        });
+      } catch (error) {
+        throw error;
+      }
+    } catch (error) {
+      throw error;
+    }
   } catch (error) {
     throw error;
   }
 };
 
-//
+// 비밀번호 재설정
 export const resetPassword = async (req: Request, res: Response) => {
   try {
   } catch (error) {

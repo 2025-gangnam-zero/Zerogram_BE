@@ -14,10 +14,10 @@ import {
 } from "../types";
 
 class MeetingService {
-  // 모임 목록 조회
-  async getMeetingList(): Promise<MeetingState[]> {
+  // 모임 목록 조회 : 모든 목록 및 사용자의 목록 조회 동시에 처리
+  async getMeetingList(userId?: Types.ObjectId): Promise<MeetingState[]> {
     try {
-      const meetings = await meetingRepository.getMeetingList();
+      const meetings = await meetingRepository.getMeetingList(userId);
 
       return meetings;
     } catch (error) {

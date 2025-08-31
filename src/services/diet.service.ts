@@ -1,7 +1,11 @@
-import { InternalServerError, NotFoundError, UnauthorizedError } from "errors";
 import { Types } from "mongoose";
-import { dietRepository } from "repositories";
-import { DietState, MealState } from "types";
+import {
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors";
+import { dietRepository } from "../repositories";
+import { DietState, MealState } from "../types";
 
 class DietService {
   // 사용자 일일 식단 목록 조회

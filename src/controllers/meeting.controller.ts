@@ -1,8 +1,8 @@
-import { BadRequestError } from "errors";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { meetingService } from "services";
-import { ReplyState } from "types";
+import { BadRequestError } from "../errors";
+import { meetingService } from "../services";
+import { ReplyState } from "../types";
 
 // 모임 목록
 export const getMeetingList = async (req: Request, res: Response) => {
@@ -23,6 +23,7 @@ export const getMeetingList = async (req: Request, res: Response) => {
   }
 };
 
+// 모임 생성
 export const createMeeting = async (req: Request, res: Response) => {
   const meetingRequest = req.body;
   // 모임 생성 요소 유효성 검사

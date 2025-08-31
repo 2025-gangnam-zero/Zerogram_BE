@@ -1,7 +1,7 @@
-import { BadRequestError } from "errors";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { meetingService, userService } from "services";
+import { BadRequestError } from "../errors";
+import { meetingService, userService } from "../services";
 
 export const getAllInfo = async (req: Request, res: Response) => {
   try {
@@ -52,36 +52,36 @@ export const getUserInfoByUserId = async (req: Request, res: Response) => {
   }
 };
 
-export const getMeetingById = async (req: Request, res: Response) => {
-  const { meetingId } = req.body;
+// export const getMeetingById = async (req: Request, res: Response) => {
+//   const { meetingId } = req.body;
 
-  if (!meetingId) {
-    throw new BadRequestError("모임 아이디 필수");
-  }
+//   if (!meetingId) {
+//     throw new BadRequestError("모임 아이디 필수");
+//   }
 
-  const _id = new mongoose.Types.ObjectId(meetingId);
+//   const _id = new mongoose.Types.ObjectId(meetingId);
 
-  try {
-    const meeting = await meetingService.getMeetingById(_id);
+//   try {
+//     const meeting = await meetingService.getMeetingById(_id);
 
-    res.status(200).json({
-      success: true,
-      message: "모임 조회 성공",
-      code: "GET_MEETING_SUCCEEDED",
-      timestamp: new Date().toISOString(),
-      data: {
-        meeting,
-      },
-    });
-  } catch (error) {
-    throw error;
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       message: "모임 조회 성공",
+//       code: "GET_MEETING_SUCCEEDED",
+//       timestamp: new Date().toISOString(),
+//       data: {
+//         meeting,
+//       },
+//     });
+//   } catch (error) {
+//     throw error;
+//   }
+// };
 
 export const getReplyById = async (req: Request, res: Response) => {};
 
 export const deleteUserByEmail = async (req: Request, res: Response) => {};
 
-export const deleteMeetingById = async (req: Request, res: Response) => {};
+// export const deleteMeetingById = async (req: Request, res: Response) => {};
 
 export const deleteReplyById = async (req: Request, res: Response) => {};

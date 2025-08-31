@@ -1,4 +1,3 @@
-import { API_CALL_TIMEOUT } from "../constants";
 import {
   MongoDBCastError,
   MongoDBDuplicateKeyError,
@@ -56,16 +55,6 @@ export const mongoDBErrorHandler = (method: string, error: any): never => {
 
   // MongoDB 네트워크 연결 오류 처리
   if (error.message.includes("failed to connect")) {
-    const { host, port } = error; // 연결 실패 시, MongoDB의 호스트와 포트 추출
-
-    // 네트워크 오류에 관한 세부 정보를 errorDetails에 추가
-    const errorDetails = {
-      endpoint: `mongodb://${host}:${port}`, // MongoDB 서버 주소
-      driverVersion: error.driverVersion || "N/A", // 드라이버 버전 (없다면 "N/A")
-      errorCode: error.code || "UNKNOWN", // MongoDB 에러 코드
-      timeout: `${API_CALL_TIMEOUT / 1000}s`, // 사용한 타임아웃 임계값 (예: 30s)
-    };
-
     throw new MongoDBNetworkError(
       "Failed to connect to MongoDB server. (MongoDB 서버 연결 실패)",
       "MONGODB_NETWORK_ERROR"
@@ -74,8 +63,6 @@ export const mongoDBErrorHandler = (method: string, error: any): never => {
 
   // MongoDB 타임아웃 오류 처리
   if (error.message.includes("timeout")) {
-    const endpoint = error.host || "Unknown endpoint"; // 타임아웃 오류 발생 시, endpoint 정보 추출
-
     throw new MongoDBTimeoutError(
       "MongoDB request timed out. (MongoDB 요청 시간 초과)",
       "MONGODB_TIMEOUT_ERROR"

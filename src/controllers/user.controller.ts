@@ -1,8 +1,8 @@
-import { BadRequestError } from "errors";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { dietService, userService } from "services";
-import { MealState, UserUpdateDto } from "types";
+import { BadRequestError } from "../errors";
+import { dietService, meetingService, userService } from "../services";
+import { MealState, UserUpdateDto } from "../types";
 
 // 사용자 조회
 export const getUserInfo = async (req: Request, res: Response) => {
@@ -61,6 +61,7 @@ export const deleteMe = async (req: Request, res: Response) => {
   }
 };
 
+// 운동 일지 목록 조회
 export const getWorkoutListById = async (req: Request, res: Response) => {
   try {
   } catch (error) {
@@ -68,6 +69,7 @@ export const getWorkoutListById = async (req: Request, res: Response) => {
   }
 };
 
+// 운동 일지 생성
 export const createWorkout = async (req: Request, res: Response) => {
   try {
   } catch (error) {
@@ -75,6 +77,7 @@ export const createWorkout = async (req: Request, res: Response) => {
   }
 };
 
+// 운동 일지 조회
 export const getWorkoutById = async (req: Request, res: Response) => {
   try {
   } catch (error) {
@@ -82,6 +85,7 @@ export const getWorkoutById = async (req: Request, res: Response) => {
   }
 };
 
+// 운동 일지 수정
 export const updateWorkoutById = async (req: Request, res: Response) => {
   try {
   } catch (error) {
@@ -89,6 +93,7 @@ export const updateWorkoutById = async (req: Request, res: Response) => {
   }
 };
 
+// 운동 일지 삭제
 export const deleteWorkoutById = async (req: Request, res: Response) => {
   try {
   } catch (error) {
@@ -96,6 +101,7 @@ export const deleteWorkoutById = async (req: Request, res: Response) => {
   }
 };
 
+// 사용자의 일일 식단 목록
 export const getDietListById = async (req: Request, res: Response) => {
   const user = req.user;
   try {
@@ -216,8 +222,22 @@ export const deleteDietById = async (req: Request, res: Response) => {
   }
 };
 
-export const getMeetingListById = async (req: Request, res: Response) => {
+// 사용자의 미팅 목록 조회
+export const getMeetingListByUserId = async (req: Request, res: Response) => {
+  const user = req.user;
+
   try {
+    const meetings = await meetingService.getMeetingList(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "모임 조회 성공",
+      code: "GET_MEETING_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        meetings,
+      },
+    });
   } catch (error) {
     throw error;
   }

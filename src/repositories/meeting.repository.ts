@@ -5,9 +5,9 @@ import { mongoDBErrorHandler } from "../utils";
 
 class MeetingRespository {
   // 모임 목록 조회
-  async getMeetingList(): Promise<MeetingState[]> {
+  async getMeetingList(userId?: Types.ObjectId): Promise<MeetingState[]> {
     try {
-      const meetings = await Meeting.find({});
+      const meetings = await Meeting.find({ _id: userId });
 
       return meetings;
     } catch (error) {

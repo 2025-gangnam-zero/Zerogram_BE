@@ -7,7 +7,7 @@ import {
 } from "../errors";
 import { userRepository } from "../repositories";
 import { UserState, UserUpdateDto } from "../types";
-import { checkPassword, hashPassword } from "utils";
+import { checkPassword, hashPassword } from "../utils";
 
 class UserService {
   // _id를 이용한 사용자 조회
@@ -110,6 +110,23 @@ class UserService {
     }
   }
 
+  // 소셜 로그인
+  async socialLogin(email: string): Promise<UserState | null> {
+    try {
+      // 기존 사용자 여부 확인
+      const isExistingUser = await this.checkEmailDuplicate(email);
+
+      if (!isExistingUser) return null;
+
+      // 이메일을 이용한 사용자 정보 조회
+      const user = await this.getUserByEmail(email);
+
+      return user;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // 사용자 목록 조회
   async getUserList(): Promise<UserState[]> {
     try {
@@ -154,8 +171,6 @@ class UserService {
       throw error;
     }
   }
-
-  
 }
 
 export default new UserService();
