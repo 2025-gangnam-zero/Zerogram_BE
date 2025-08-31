@@ -8,12 +8,18 @@ import {
   getReplyById,
   getUserInfoByUserId,
 } from "../controllers";
+import { adminChecker, authChecker } from "../middlewares";
 
 export default () => {
   const router = Router();
 
-  router.get("/admin/", getAllInfo);
-  router.get("/admin/users/:email", getUserInfoByUserId);
+  router.get("/admin/", authChecker, adminChecker, getAllInfo);
+  router.get(
+    "/admin/users/:email",
+    authChecker,
+    adminChecker,
+    getUserInfoByUserId
+  );
   router.get("/admin/users/:email/meetings/:meetingid", getMeetingById);
   router.get(
     "/admin/users/:email/meetings/:meetingid/replies/:replyid",

@@ -1,9 +1,17 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { BadRequestError } from "../errors";
+import { BadRequestError, ForbiddenError } from "../errors";
 import { meetingService, userService } from "../services";
 
+// 관리자 페이지 정보 목록 조회
 export const getAllInfo = async (req: Request, res: Response) => {
+  const user = req.user;
+
+  // 사용자가 관리자가 아닌 경우
+  if (user.role !== "ADMIN") {
+    throw new ForbiddenError("권한 없음");
+  }
+
   try {
     // 사용자 목록 조회
     const users = await userService.getUserList();
@@ -26,8 +34,14 @@ export const getAllInfo = async (req: Request, res: Response) => {
   }
 };
 
+// 사용자 아이디를 이용한 사용자 정보 조회
 export const getUserInfoByUserId = async (req: Request, res: Response) => {
+  const user = req.user;
   const { userId } = req.body;
+
+  if (user.role !== "ADMIN") {
+    throw new ForbiddenError("권한 없음");
+  }
 
   if (!userId) {
     throw new BadRequestError("사용자 아이디 필수");
