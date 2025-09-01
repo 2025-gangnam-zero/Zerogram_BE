@@ -1,5 +1,5 @@
-import { ForbiddenError } from "errors";
 import { NextFunction, Request, Response } from "express";
+import { ForbiddenError } from "../errors";
 
 export const adminChecker = (
   req: Request,

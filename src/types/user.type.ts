@@ -5,16 +5,11 @@ export type RoleType = "USER" | "ADMIN";
 
 export interface UserState {
   _id: Types.ObjectId;
-  name: string;
-  email: string;
-  password?: string;
-  profile_image?: string;
-  gender: GenderType;
-  favoriteSports: string[];
-  address: string;
-  height: number;
-  weight: number;
-  meetings: Types.ObjectId[];
+  nickname: string; // 사용자 이름
+  email: string; // 이메일
+  password?: string; // 비밀번호
+  profile_image?: string; // 프로필 이미지
+  gender: GenderType; // 성별
   role: RoleType;
   createdAt: Date;
   updatedAt: Date;
@@ -27,5 +22,4 @@ export interface UserUpdateDto {
   address?: string;
   height?: number;
   weight?: number;
-  meetings?: Types.ObjectId[];
 }

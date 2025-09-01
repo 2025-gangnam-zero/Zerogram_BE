@@ -1,9 +1,9 @@
-import mongoose, { Types } from "mongoose";
+import mongoose from "mongoose";
 import { UserState } from "../types";
 
 const UserSchema = new mongoose.Schema<UserState>(
   {
-    name: {
+    nickname: {
       type: String,
       required: true,
     },
@@ -20,26 +20,6 @@ const UserSchema = new mongoose.Schema<UserState>(
     gender: {
       type: String,
       enum: ["m", "f"],
-    },
-    favoriteSports: {
-      type: [String],
-      default: [],
-    },
-    address: {
-      type: String,
-      required: true,
-    },
-    height: {
-      type: Number,
-      required: true,
-    },
-    weight: {
-      type: Number,
-      required: true,
-    },
-    meetings: {
-      type: [Types.ObjectId],
-      default: [],
     },
     role: {
       type: String,
