@@ -29,7 +29,7 @@ class UserRepository {
   // 이메일을 이용한 사용자 조회
   async getUserByEmail(email: string): Promise<UserState | null> {
     try {
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ email }).lean();
 
       return user;
     } catch (error) {

@@ -71,8 +71,6 @@ export const login = async (req: Request, res: Response) => {
 
     const { password, ...rest } = user;
 
-    
-
     // 응답
     res.status(200).json({
       success: true,
