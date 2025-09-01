@@ -94,14 +94,18 @@ class UserService {
       const user = await userRepository.getUserByEmail(email);
 
       if (!user) {
-        throw new NotFoundError("사용자 조회 실패");
+        throw new UnauthorizedError(
+          "이메일 또는 비밀번호가 올바르지 않습니다."
+        );
       }
 
       // 비밀번호 일치 확인
       const isPasswordMatched = await checkPassword(password, user.password!);
 
       if (!isPasswordMatched) {
-        throw new UnauthorizedError("패스워드 불일치");
+        throw new UnauthorizedError(
+          "이메일 또는 비밀번호가 올바르지 않습니다."
+        );
       }
 
       return user;

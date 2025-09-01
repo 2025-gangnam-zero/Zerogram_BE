@@ -1,0 +1,205 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Zerogram",
+    "version": "0.0.1",
+    "description": "Zerogram API with Swagger"
+  },
+  "servers": [
+    { "url": "http://localhost:4000", "description": "Local server" }
+  ],
+  "tags": [
+    { "name": "Auth", "description": "인증 관련 API" },
+    { "name": "User", "description": "사용자 관련 API" }
+  ],
+  "paths": {
+    "/auth/signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "회원 가입",
+        "operationId": "authSignup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignupRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "사용자 계정 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SignupResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "409": {
+            "description": "이메일 중복",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "로그인",
+        "operationId": "authLogin",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "이메일/비밀번호 누락 혹은 형식 에러",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 실패",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "example": "6650f1abcdef1234567890" },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "nickname": { "type": "string", "example": "홍길동" },
+          "profile_image": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://cdn.example.com/u/123.png"
+          },
+          "gender": { "type": "string", "enum": ["m", "f"], "example": "m" },
+          "role": {
+            "type": "string",
+            "enum": ["USER", "ADMIN"],
+            "default": "USER",
+            "example": "USER"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["email", "nickname"]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "message": {
+            "type": "string",
+            "example": "이메일 또는 비밀번호가 올바르지 않습니다."
+          },
+          "code": { "type": "string", "example": "BAD_REQUEST" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        },
+        "required": ["success", "message"]
+      },
+      "SignupRequest": {
+        "type": "object",
+        "required": ["email", "password", "name"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "example": "P@ssw0rd!"
+          },
+          "name": { "type": "string", "example": "홍길동" }
+        }
+      },
+      "SignupResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "사용자 계정 생성 성공" },
+          "code": { "type": "string", "example": "USER_CREATION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "userId": { "type": "string", "example": "6650f1abcdef1234567890" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "pw"],
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "user@example.com"
+          },
+          "pw": { "type": "string", "example": "P@ssw0rd!" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "로그인 성공" },
+          "code": { "type": "string", "example": "LOGIN_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": { "$ref": "#/components/schemas/User" },
+              "sessionId": { "type": "string", "example": "a1b2c3d4e5f6" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

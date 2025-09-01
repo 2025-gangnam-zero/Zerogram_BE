@@ -14,11 +14,11 @@ export const signup = async (req: Request, res: Response) => {
   }
 
   if (!password) {
-    throw new BadRequestError("이메일 필수");
+    throw new BadRequestError("비밀번호 필수");
   }
 
   if (!name) {
-    throw new BadRequestError("닉네잉 필수");
+    throw new BadRequestError("닉네임 필수");
   }
 
   if (!/^[^\s@]+@[^\s@]+.[^\s@]+$/.test(email)) {

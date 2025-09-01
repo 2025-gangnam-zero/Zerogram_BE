@@ -4,6 +4,8 @@ import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes";
 import { errorHandler } from "./middlewares";
+import swaggerUi from "swagger-ui-express";
+import swaggerDocument from "./docs/swagger.json";
 
 const env = process.env.NODE_ENV || "local";
 
@@ -15,9 +17,10 @@ const PORT = process.env.PORT || 4000;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost";
 const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
 
-console.log(`${CLIENT_URL}:${CLIENT_PORT}`);
-
 const app = express();
+
+// swagger ui 연결
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.use(
   cors({
@@ -55,6 +58,9 @@ mongoose
 // MongoDB 연결 에러를 처리합니다.
 mongoose.connection.on("error", (error: Error) => console.log(error));
 
-app.listen(PORT, () => console.log(`서버가 ${PORT} 포트에 연결됨`));
+app.listen(PORT, () => {
+  console.log(`서버가 ${PORT} 포트에 연결됨`);
+  console.log(`스웨거가 ${PORT} 포트에 연결됨`);
+});
 
 app.use(errorHandler);
