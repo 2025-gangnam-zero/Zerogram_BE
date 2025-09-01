@@ -65,9 +65,9 @@ class UserSessionService {
   async createUserSession(_id: Types.ObjectId): Promise<UserSessionState> {
     try {
       // 액세스 토큰 생성
-      const access_token = await jwtSign(_id, ACCESS_TOKEN_EXPIRESIN);
+      const access_token = await jwtSign({ _id }, ACCESS_TOKEN_EXPIRESIN);
       // 리프레시 토큰 생성
-      const refresh_token = await jwtSign(_id, REFRESH_TOKEN_EXPIRESIN);
+      const refresh_token = await jwtSign({ _id }, REFRESH_TOKEN_EXPIRESIN);
 
       const newUserSession = {
         userId: _id,

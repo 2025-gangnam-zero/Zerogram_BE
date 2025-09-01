@@ -71,7 +71,7 @@ export const login = async (req: Request, res: Response) => {
 
     const { password, ...rest } = user;
 
-    // sessionId를 어떤 식으로 전달할지 결정 필요
+    
 
     // 응답
     res.status(200).json({
