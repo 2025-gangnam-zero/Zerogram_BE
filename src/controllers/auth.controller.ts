@@ -7,10 +7,34 @@ import { OAUTH_REDIRECT_URI, OAUTH_GRANT_TYPE } from "../constants";
 
 // 회원 가입
 export const signup = async (req: Request, res: Response) => {
-  const userInfo = req.body;
-  try {
-    // 유효성 검사 추가 필요
+  const { email, password, name } = req.body;
 
+  if (!email) {
+    throw new BadRequestError("이메일 필수");
+  }
+
+  if (!password) {
+    throw new BadRequestError("이메일 필수");
+  }
+
+  if (!name) {
+    throw new BadRequestError("닉네잉 필수");
+  }
+
+  if (!/^[^\s@]+@[^\s@]+.[^\s@]+$/.test(email)) {
+    throw new BadRequestError("이메일 형식 에러");
+  }
+
+  if (password.length < 8) {
+    throw new BadRequestError("패스워드 형식 에러");
+  }
+
+  try {
+    const userInfo = {
+      email,
+      password,
+      nickname: name,
+    };
     // 사용자 계정 생성
     await userService.createUser(userInfo as UserState);
 

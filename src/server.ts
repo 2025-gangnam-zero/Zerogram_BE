@@ -1,4 +1,5 @@
 import express from "express";
+import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import routes from "./routes";
@@ -11,16 +12,48 @@ dotenv.config({
 });
 
 const PORT = process.env.PORT || 4000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost";
+const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
+
+console.log(`${CLIENT_URL}:${CLIENT_PORT}`);
 
 const app = express();
 
-app.use("/", routes());
-
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      `${CLIENT_URL}:${CLIENT_PORT}`,
+      `http://localhost:3000`,
+      `http://localhost:3001`,
+    ],
+    // 허용할 HTTP 메소드 설정
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    // 자격 증명(credentials)을 포함한 요청 허용
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
+
+app.use("/", routes());
+
+mongoose.Promise = Promise;
+
+const MONGODB_URL = process.env.MONGODB_URL || "";
+
+mongoose
+  .connect(MONGODB_URL)
+  .then(() => {
+    console.log("MongoDB에 성공적으로 연결되었습니다.");
+  })
+  .catch((error) => {
+    console.error("MongoDB 연결 중 오류 발생:", error);
+  });
+
+// MongoDB 연결 에러를 처리합니다.
+mongoose.connection.on("error", (error: Error) => console.log(error));
 
 app.listen(PORT, () => console.log(`서버가 ${PORT} 포트에 연결됨`));
 

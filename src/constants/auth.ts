@@ -15,3 +15,4 @@ export const KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me";
 // 소셜 로그인
 export const OAUTH_REDIRECT_URI = `${SERVER_URL}:${PORT}/auth/oauth`;
 export const OAUTH_GRANT_TYPE = "authorization_code";
+
