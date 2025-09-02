@@ -110,6 +110,8 @@ export const oauth = async (req: Request, res: Response) => {
   try {
     const { state, code } = req.query;
 
+    console.log("state", state, "code", code);
+
     // state와 code를 전달 받지 못한 경우
     if (!state || !code) {
       throw new BadRequestError("소셜 타입과 code 필수");
@@ -122,6 +124,8 @@ export const oauth = async (req: Request, res: Response) => {
     const { client_id, client_secret, token_url, userInfo_url } = oauths[
       oauthType
     ] as OauthInfo;
+
+    console.log(client_id, client_secret);
 
     // 토큰 요청을 위한 필요 정보
     const requestBody = {
@@ -178,24 +182,24 @@ export const oauth = async (req: Request, res: Response) => {
         // 소셜 로그인 사용자 정보: 초기값
         let oauthUserInfo: {
           email: string;
-          name: string;
+          nickname: string;
           profile_image: string;
         } = {
           email: "",
-          name: "",
+          nickname: "",
           profile_image: "",
         };
 
         if (oauthType === "google") {
           oauthUserInfo = {
             email: result.email,
-            name: result.name,
+            nickname: result.name,
             profile_image: result.picture,
           };
         } else if (oauthType === "kakao") {
           oauthUserInfo = {
             email: result.kakao_account.email,
-            name: result.properties.nickname,
+            nickname: result.properties.nickname,
             profile_image: result.properties.profile_image,
           };
         }
@@ -203,18 +207,33 @@ export const oauth = async (req: Request, res: Response) => {
         // 소셜 로그인 : 기존 사용자 여부 확인하고 정보 조회
         const user = await userService.socialLogin(oauthUserInfo.email);
 
+        console.log(user);
+
         // 기존 사용자가 아닌 경우: 회원가입 진행
         if (!user) {
-          res.status(200).json({
-            success: true,
-            message: "소셜 로그인 성공 및 회원가입 진행",
-            code: "SOCIAL_LOGIN_SUCCEEDED_AND_SIGN_UP_PROCEED",
-            timestamp: new Date().toISOString(),
-            data: {
-              userInfo: oauthUserInfo,
-            },
+          // 사용자 계정 생성
+          const user = await userService.createUser(oauthUserInfo as UserState);
+
+          console.log(user);
+
+          // 세션 생성
+          const session = await userSessionService.createUserSession(user._id);
+
+          const { password, ...rest } = user;
+
+          const params = new URLSearchParams();
+          Object.entries(rest).forEach(([k, v]) => {
+            if (v === undefined || v === null) return;
+            params.append(k, String(v));
           });
-          return;
+
+          console.log(params);
+
+          return res.redirect(
+            `http://10.10.0.173:3000/login?sessionId=${
+              session._id
+            }&${params.toString()}`
+          );
         }
 
         // 사용자 세션 생성
@@ -226,17 +245,19 @@ export const oauth = async (req: Request, res: Response) => {
 
         // sessionId를 어떤 식으로 전달할지 결정 필요
 
-        // 응답
-        res.status(200).json({
-          success: true,
-          message: "소셜 로그인 성공",
-          code: "SOCIAL_LOGIN_SUCCEEDED",
-          timestamp: new Date().toISOString(),
-          data: {
-            user: rest,
-            sessionId: userSession._id, // 변경 될 수 있음
-          },
+        const params = new URLSearchParams();
+        Object.entries(rest).forEach(([k, v]) => {
+          if (v === undefined || v === null) return;
+          params.append(k, String(v));
         });
+
+        console.log(params);
+        // 응답
+        return res.redirect(
+          `http://10.10.0.173:3000/login?sessionId=${
+            userSession._id
+          }&${params.toString()}`
+        );
       } catch (error) {
         throw error;
       }

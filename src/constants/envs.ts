@@ -1,5 +1,9 @@
 import dotenv from "dotenv";
-dotenv.config();
+const env = process.env.NODE_ENV || "local";
+
+dotenv.config({
+  path: `.env.${env}`,
+});
 
 export const PORT = process.env.PORT || "4000";
 export const SERVER_URL = process.env.SERVER_URL || "http://localhost";
