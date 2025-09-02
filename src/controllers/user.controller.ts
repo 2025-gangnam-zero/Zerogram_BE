@@ -7,14 +7,19 @@ import { MealState, UserUpdateDto } from "../types";
 // 사용자 조회
 export const getUserInfo = async (req: Request, res: Response) => {
   const user = req.user;
+
+  const { password, ...rest } = user;
+
+  console.log(rest);
+
   try {
     res.status(200).json({
       success: true,
       message: "사용자 조회 성공",
       code: "GET_USER_SUCCEEDED",
       timestamp: new Date().toISOString(),
-      date: {
-        user,
+      data: {
+        user: rest,
       },
     });
   } catch (error) {

@@ -14,11 +14,12 @@ import {
   updateWorkoutById,
   getMeetingListByUserId,
 } from "../controllers";
+import { authChecker } from "../middlewares";
 
 export default () => {
   const router = Router();
 
-  router.get("/users/me", getUserInfo);
+  router.get("/users/me", authChecker, getUserInfo);
   router.patch("/users/me", updateMe);
   router.delete("/users/me", deleteMe);
   router.get("/users/me/workouts", getWorkoutListById);

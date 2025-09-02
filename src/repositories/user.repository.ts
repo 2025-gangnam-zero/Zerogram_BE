@@ -18,7 +18,7 @@ class UserRepository {
   // objectId를 이용한 사용자 조회
   async getUserById(_id: Types.ObjectId): Promise<UserState | null> {
     try {
-      const user = await User.findById({ _id });
+      const user = await User.findById({ _id }).lean();
 
       return user;
     } catch (error) {

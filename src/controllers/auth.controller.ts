@@ -195,7 +195,7 @@ export const oauth = async (req: Request, res: Response) => {
         } else if (oauthType === "kakao") {
           oauthUserInfo = {
             email: result.kakao_account.email,
-            name: result.properities.nickname,
+            name: result.properties.nickname,
             profile_image: result.properties.profile_image,
           };
         }

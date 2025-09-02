@@ -94,6 +94,118 @@
           }
         }
       }
+    },
+    "/auth/oauth": {
+      "get": {
+        "tags": ["Auth"],
+        "summary": "소셜 로그인 콜백",
+        "description": "OAuth 콜백에서 `state`(소셜 타입)와 `code`를 쿼리로 받아 처리합니다.",
+        "operationId": "authOauthCallback",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "schema": { "type": "string", "enum": ["google", "kakao"] },
+            "description": "소셜 타입(현재 구현: google, kakao)"
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "OAuth 인가 코드"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "소셜 로그인 성공 또는 회원가입 진행",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SocialLoginSucceededResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/SocialLoginProceedSignupResponse"
+                    }
+                  ],
+                  "discriminator": {
+                    "propertyName": "code",
+                    "mapping": {
+                      "SOCIAL_LOGIN_SUCCEEDED": "#/components/schemas/SocialLoginSucceededResponse",
+                      "SOCIAL_LOGIN_SUCCEEDED_AND_SIGN_UP_PROCEED": "#/components/schemas/SocialLoginProceedSignupResponse"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "state/code 누락",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "OAuth 토큰/사용자 정보 취득 실패",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me": {
+      "get": {
+        "tags": ["User"],
+        "summary": "내 정보 조회",
+        "operationId": "getMyUserInfo",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "사용자 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "사용자 조회 성공"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "GET_USER_SUCCEEDED"
+                    },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "$ref": "#/components/schemas/User" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -196,6 +308,59 @@
             "properties": {
               "user": { "$ref": "#/components/schemas/User" },
               "sessionId": { "type": "string", "example": "a1b2c3d4e5f6" }
+            }
+          }
+        }
+      },
+      "SocialLoginSucceededResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "소셜 로그인 성공" },
+          "code": { "type": "string", "example": "SOCIAL_LOGIN_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "user": { "$ref": "#/components/schemas/User" },
+              "sessionId": { "type": "string", "example": "a1b2c3d4e5f6" }
+            }
+          }
+        }
+      },
+      "SocialLoginProceedSignupResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": {
+            "type": "string",
+            "example": "소셜 로그인 성공 및 회원가입 진행"
+          },
+          "code": {
+            "type": "string",
+            "example": "SOCIAL_LOGIN_SUCCEEDED_AND_SIGN_UP_PROCEED"
+          },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "userInfo": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "social@example.com"
+                  },
+                  "name": { "type": "string", "example": "소셜유저" },
+                  "profile_image": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://cdn.example.com/u/social.png"
+                  }
+                },
+                "required": ["email", "name"]
+              }
             }
           }
         }
