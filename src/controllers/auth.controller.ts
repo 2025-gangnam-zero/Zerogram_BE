@@ -3,7 +3,12 @@ import { BadRequestError, ForbiddenError } from "../errors";
 import { userService, userSessionService } from "../services";
 import { OauthInfo, OauthType, UserState } from "../types";
 import { oauths } from "../data";
-import { OAUTH_REDIRECT_URI, OAUTH_GRANT_TYPE } from "../constants";
+import {
+  OAUTH_REDIRECT_URI,
+  OAUTH_GRANT_TYPE,
+  CLIENT_URL,
+  CLIENT_PORT,
+} from "../constants";
 
 // 회원 가입
 export const signup = async (req: Request, res: Response) => {
@@ -214,8 +219,6 @@ export const oauth = async (req: Request, res: Response) => {
           // 사용자 계정 생성
           const user = await userService.createUser(oauthUserInfo as UserState);
 
-          console.log(user);
-
           // 세션 생성
           const session = await userSessionService.createUserSession(user._id);
 
@@ -227,10 +230,8 @@ export const oauth = async (req: Request, res: Response) => {
             params.append(k, String(v));
           });
 
-          console.log(params);
-
           return res.redirect(
-            `http://10.10.0.173:3000/login?sessionId=${
+            `${CLIENT_URL}:${CLIENT_PORT}/login?sessionId=${
               session._id
             }&${params.toString()}`
           );
@@ -254,7 +255,7 @@ export const oauth = async (req: Request, res: Response) => {
         console.log(params);
         // 응답
         return res.redirect(
-          `http://10.10.0.173:3000/login?sessionId=${
+          `${CLIENT_URL}:${CLIENT_PORT}/login?sessionId=${
             userSession._id
           }&${params.toString()}`
         );

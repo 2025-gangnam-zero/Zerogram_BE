@@ -13,3 +13,5 @@ export const GOOGLE_SECRET = process.env.GOOGLE_SECRET || "";
 export const KAKAO_CLIENT_ID = process.env.KAKAO_CLIENT_ID || "";
 export const KAKAO_SECRET = process.env.KAKAO_SECRET || "";
 export const MONGODB_URL = process.env.MONGODB_URL || "";
+export const CLIENT_URL = process.env.CLIENT_URL || "";
+export const CLIENT_PORT = process.env.CLIENT_PORT || "";
