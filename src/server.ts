@@ -10,7 +10,7 @@ import swaggerDocument from "./docs/swagger.json";
 const env = process.env.NODE_ENV || "local";
 
 dotenv.config({
-  path: `.env.${env}`,
+  path: `.env.${env}` ? `.env.${env}` : undefined,
 });
 
 const PORT = process.env.PORT || 4000;

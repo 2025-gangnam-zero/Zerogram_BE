@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 const env = process.env.NODE_ENV || "local";
 
 dotenv.config({
-  path: `.env.${env}`,
+  path: `.env.${env}` ? `.env.${env}` : undefined,
 });
 
 export const PORT = process.env.PORT || "4000";
