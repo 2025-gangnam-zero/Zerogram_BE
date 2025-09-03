@@ -141,6 +141,8 @@ export const oauth = async (req: Request, res: Response) => {
       grant_type: OAUTH_GRANT_TYPE,
     };
 
+    console.log(OAUTH_REDIRECT_URI);
+
     // 토큰 요청
     try {
       const response = await fetch(token_url, {
@@ -165,10 +167,13 @@ export const oauth = async (req: Request, res: Response) => {
       // 소셜 액세스 토큰
       const access_token = result.access_token;
 
+      console.log(userInfo_url);
+      console.log(access_token);
+
       // 사용자 정보 요청
       try {
         const response = await fetch(userInfo_url, {
-          method: "POST",
+          method: "GET",
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
