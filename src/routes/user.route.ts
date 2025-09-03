@@ -20,9 +20,9 @@ export default () => {
   const router = Router();
 
   router.get("/users/me", authChecker, getUserInfo);
-  router.patch("/users/me", updateMe);
-  router.delete("/users/me", deleteMe);
-  router.get("/users/me/workouts", getWorkoutListById);
+  router.patch("/users/me", authChecker, updateMe);
+  router.delete("/users/me", authChecker, deleteMe);
+  router.get("/users/me/workouts", authChecker,  getWorkoutListById);
   router.post("/users/me/workouts", createWorkout);
   router.get("/users/me/workouts/:workoutid", getWorkoutById);
   router.patch("/users/me/workouts/:workoutid", updateWorkoutById);
