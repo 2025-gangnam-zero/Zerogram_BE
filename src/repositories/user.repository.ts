@@ -42,8 +42,13 @@ class UserRepository {
     _id: Types.ObjectId,
     updateUserInfo: UserUpdateDto
   ): Promise<UpdateResult> {
+    console.log(updateUserInfo);
+
     try {
-      const result = await User.updateOne({ _id }, { updateUserInfo });
+      const result = await User.updateOne(
+        { _id },
+        { $set: { ...updateUserInfo } }
+      );
 
       return result;
     } catch (error) {

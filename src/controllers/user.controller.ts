@@ -42,10 +42,14 @@ export const getUserInfo = async (req: Request, res: Response) => {
 // 사용자 수정
 export const updateMe = async (req: Request, res: Response) => {
   const user = req.user;
-  const { nickname, password } = req.body;
+  const { nickname, password, profile_image } = req.body;
+
+  console.log(user);
+
+  console.log(nickname, password, profile_image);
 
   try {
-    const updateDto = { nickname, password } as UserUpdateDto;
+    const updateDto = { nickname, password, profile_image } as UserUpdateDto;
 
     await userService.updateMe(user._id, updateDto);
 
