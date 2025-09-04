@@ -145,6 +145,7 @@ class UserService {
   // 사용자 수정
   async updateMe(userId: Types.ObjectId, userUpdate: UserUpdateDto) {
     try {
+
       const result = await userRepository.updateMe(userId, userUpdate);
 
       if (result.matchedCount === 0) {

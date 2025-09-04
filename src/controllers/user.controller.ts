@@ -8,6 +8,7 @@ import {
   userSessionService,
 } from "../services";
 import { MealState, UserUpdateDto } from "../types";
+import { deleteImage } from "../utils";
 
 // 사용자 조회
 export const getUserInfo = async (req: Request, res: Response) => {
@@ -42,16 +43,30 @@ export const getUserInfo = async (req: Request, res: Response) => {
 // 사용자 수정
 export const updateMe = async (req: Request, res: Response) => {
   const user = req.user;
-  const { nickname, password, profile_image } = req.body;
+  const { nickname, password } = req.body;
+  const profile_image = req.file;
 
   console.log(user);
+
+  const oldImage = user.profile_image
+    ? user.profile_image.split(".com/")[1]
+    : undefined;
 
   console.log(nickname, password, profile_image);
 
   try {
-    const updateDto = { nickname, password, profile_image } as UserUpdateDto;
+    const updateDto = {
+      nickname: nickname ? nickname : undefined,
+      password: password ? password : undefined,
+      profile_image: profile_image ? profile_image.location : undefined,
+    } as UserUpdateDto;
 
     await userService.updateMe(user._id, updateDto);
+
+    // 기존 이미지가 있는 경우 삭제
+    if (oldImage) {
+      await deleteImage(oldImage);
+    }
 
     res.status(200).json({
       success: true,
