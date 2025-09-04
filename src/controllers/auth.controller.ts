@@ -3,12 +3,7 @@ import { BadRequestError, ForbiddenError } from "../errors";
 import { userService, userSessionService } from "../services";
 import { OauthInfo, OauthType, UserState } from "../types";
 import { oauths } from "../data";
-import {
-  OAUTH_REDIRECT_URI,
-  OAUTH_GRANT_TYPE,
-  CLIENT_URL,
-  CLIENT_PORT,
-} from "../constants";
+import { OAUTH_REDIRECT_URI, OAUTH_GRANT_TYPE, CLIENT_URL } from "../constants";
 
 // 회원 가입
 export const signup = async (req: Request, res: Response) => {
@@ -72,7 +67,10 @@ export const login = async (req: Request, res: Response) => {
     const user = await userService.login(email, pw);
 
     // 사용자 세션 생성
-    const userSession = await userSessionService.createUserSession(user._id);
+    const userSession = await userSessionService.createUserSession(
+      user._id,
+      "normal"
+    );
 
     const { password, ...rest } = user;
 
@@ -83,7 +81,7 @@ export const login = async (req: Request, res: Response) => {
       code: "LOGIN_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        user: rest,
+        user: { ...rest, login_type: "normal" },
         sessionId: userSession._id, // 변경 될 수 있음
       },
     });
@@ -225,26 +223,30 @@ export const oauth = async (req: Request, res: Response) => {
           const user = await userService.createUser(oauthUserInfo as UserState);
 
           // 세션 생성
-          const session = await userSessionService.createUserSession(user._id);
+          const session = await userSessionService.createUserSession(
+            user._id,
+            "social"
+          );
 
           const { password, ...rest } = user;
 
           const params = new URLSearchParams();
-          Object.entries(rest).forEach(([k, v]) => {
-            if (v === undefined || v === null) return;
-            params.append(k, String(v));
-          });
+          Object.entries({ ...rest, login_type: "social" }).forEach(
+            ([k, v]) => {
+              if (v === undefined || v === null) return;
+              params.append(k, String(v));
+            }
+          );
 
           return res.redirect(
-            `${CLIENT_URL}:${CLIENT_PORT}/login?sessionId=${
-              session._id
-            }&${params.toString()}`
+            `${CLIENT_URL}/login?sessionId=${session._id}&${params.toString()}`
           );
         }
 
         // 사용자 세션 생성
         const userSession = await userSessionService.createUserSession(
-          user._id
+          user._id,
+          "social"
         );
 
         const { password, ...rest } = user;
@@ -252,7 +254,7 @@ export const oauth = async (req: Request, res: Response) => {
         // sessionId를 어떤 식으로 전달할지 결정 필요
 
         const params = new URLSearchParams();
-        Object.entries(rest).forEach(([k, v]) => {
+        Object.entries({ ...rest, login_type: "social" }).forEach(([k, v]) => {
           if (v === undefined || v === null) return;
           params.append(k, String(v));
         });
@@ -260,7 +262,7 @@ export const oauth = async (req: Request, res: Response) => {
         console.log(params);
         // 응답
         return res.redirect(
-          `${CLIENT_URL}:${CLIENT_PORT}/login?sessionId=${
+          `${CLIENT_URL}/login?sessionId=${
             userSession._id
           }&${params.toString()}`
         );

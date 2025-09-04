@@ -16,6 +16,10 @@ const UserSessionSchema = new mongoose.Schema<UserSessionState>(
       type: String,
       required: true,
     },
+    login_type: {
+      type: String,
+      enum: ["normal", "social"],
+    },
   },
   {
     versionKey: false,

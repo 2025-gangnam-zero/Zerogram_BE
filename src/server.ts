@@ -6,6 +6,7 @@ import routes from "./routes";
 import { errorHandler } from "./middlewares";
 import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./docs/swagger.json";
+import { CLIENT_URL, PORT } from "./constants";
 
 const env = process.env.NODE_ENV || "local";
 
@@ -13,22 +14,16 @@ dotenv.config({
   path: `.env.${env}` ? `.env.${env}` : undefined,
 });
 
-const PORT = process.env.PORT || 4000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost";
-const CLIENT_PORT = process.env.CLIENT_PORT || 3000;
-
 const app = express();
 
 // swagger ui 연결
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
+console.log(CLIENT_URL);
+
 app.use(
   cors({
-    origin: [
-      `${CLIENT_URL}:${CLIENT_PORT}`,
-      `http://localhost:3000`,
-      `http://localhost:3001`,
-    ],
+    origin: [`${CLIENT_URL}`, `http://localhost:3000`, `http://localhost:3001`],
     // 허용할 HTTP 메소드 설정
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     // 자격 증명(credentials)을 포함한 요청 허용

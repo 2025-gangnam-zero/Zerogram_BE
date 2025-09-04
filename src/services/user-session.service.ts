@@ -1,7 +1,7 @@
 import { Types } from "mongoose";
 import { InternalServerError, NotFoundError } from "../errors";
 import { userSessionRepository } from "../repositories";
-import { UserSessionCreateDto, UserSessionState } from "../types";
+import { LoginType, UserSessionCreateDto, UserSessionState } from "../types";
 import { jwtSign } from "../utils";
 import { ACCESS_TOKEN_EXPIRESIN, REFRESH_TOKEN_EXPIRESIN } from "../constants";
 
@@ -62,7 +62,10 @@ class UserSessionService {
   }
 
   // 사용자 세션 생성
-  async createUserSession(_id: Types.ObjectId): Promise<UserSessionState> {
+  async createUserSession(
+    _id: Types.ObjectId,
+    login_type: LoginType
+  ): Promise<UserSessionState> {
     try {
       // 액세스 토큰 생성
       const access_token = await jwtSign({ _id }, ACCESS_TOKEN_EXPIRESIN);
@@ -73,6 +76,7 @@ class UserSessionService {
         userId: _id,
         access_token,
         refresh_token,
+        login_type,
       } as UserSessionCreateDto;
 
       // 사용자 세션 생성

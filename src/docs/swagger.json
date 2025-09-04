@@ -205,6 +205,62 @@
             }
           }
         }
+      },
+      "patch": {
+        "tags": ["User"],
+        "summary": "내 정보 수정",
+        "operationId": "updateMyUserInfo",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UserUpdateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "사용자 정보 수정",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UpdateUserResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(유효성 에러 등)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "사용자 조회 실패(존재하지 않음)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "사용자 수정 실패(내부 서버 오류)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -363,6 +419,28 @@
               }
             }
           }
+        }
+      },
+      "UserUpdateRequest": {
+        "type": "object",
+        "properties": {
+          "nickname": {
+            "type": "string",
+            "example": "새닉네임",
+            "minLength": 1,
+            "maxLength": 30
+          }
+        },
+        "required": ["nickname"],
+        "additionalProperties": false
+      },
+      "UpdateUserResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "사용자 정보 수정" },
+          "code": { "type": "string", "example": "USER_UPDATE_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
         }
       }
     }

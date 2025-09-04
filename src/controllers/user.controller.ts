@@ -1,14 +1,23 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { BadRequestError } from "../errors";
-import { dietService, meetingService, userService } from "../services";
+import {
+  dietService,
+  meetingService,
+  userService,
+  userSessionService,
+} from "../services";
 import { MealState, UserUpdateDto } from "../types";
 
 // 사용자 조회
 export const getUserInfo = async (req: Request, res: Response) => {
   const user = req.user;
+  const sessionId = req.sessionId;
 
   const { password, ...rest } = user;
+
+  // 사용자 세션 조회
+  const userSession = await userSessionService.getUserSessionById(sessionId);
 
   console.log(rest);
 
@@ -19,7 +28,10 @@ export const getUserInfo = async (req: Request, res: Response) => {
       code: "GET_USER_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        user: rest,
+        user: {
+          ...rest,
+          login_type: userSession.login_type,
+        },
       },
     });
   } catch (error) {
@@ -30,10 +42,10 @@ export const getUserInfo = async (req: Request, res: Response) => {
 // 사용자 수정
 export const updateMe = async (req: Request, res: Response) => {
   const user = req.user;
-  const { nickname } = req.body;
+  const { nickname, password } = req.body;
 
   try {
-    const updateDto = { nickname } as UserUpdateDto;
+    const updateDto = { nickname, password } as UserUpdateDto;
 
     await userService.updateMe(user._id, updateDto);
 
