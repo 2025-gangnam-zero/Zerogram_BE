@@ -44,7 +44,7 @@ export const getUserInfo = async (req: Request, res: Response) => {
 export const updateMe = async (req: Request, res: Response) => {
   const user = req.user;
   const { nickname, password } = req.body;
-  const profile_image = req.file;
+  const profile_image = req.file as Express.MulterS3.File;
 
   console.log(user);
 
