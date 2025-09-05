@@ -64,7 +64,7 @@ export const updateMe = async (req: Request, res: Response) => {
     await userService.updateMe(user._id, updateDto);
 
     // 기존 이미지가 있는 경우 삭제
-    if (oldImage) {
+    if (profile_image && oldImage) {
       await deleteImage(oldImage);
     }
 
