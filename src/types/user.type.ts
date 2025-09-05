@@ -16,10 +16,16 @@ export interface UserState {
 }
 
 export interface UserUpdateDto {
+  nickname?: string;
   password?: string;
   profile_image?: string;
   favoriteSports?: string[];
   address?: string;
   height?: number;
   weight?: number;
+}
+
+export interface UserUpdateResponseDto {
+  profile_image?: string;
+  nickname?: string;
 }

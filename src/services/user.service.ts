@@ -145,6 +145,10 @@ class UserService {
   // 사용자 수정
   async updateMe(userId: Types.ObjectId, userUpdate: UserUpdateDto) {
     try {
+      // 비밀번호 해싱
+      if (userUpdate.password) {
+        userUpdate.password = await hashPassword(userUpdate.password!);
+      }
 
       const result = await userRepository.updateMe(userId, userUpdate);
 

@@ -7,7 +7,7 @@ import {
   userService,
   userSessionService,
 } from "../services";
-import { MealState, UserUpdateDto } from "../types";
+import { MealState, UserUpdateDto, UserUpdateResponseDto } from "../types";
 import { deleteImage } from "../utils";
 
 // 사용자 조회
@@ -68,11 +68,19 @@ export const updateMe = async (req: Request, res: Response) => {
       await deleteImage(oldImage);
     }
 
+    const responseDto: UserUpdateResponseDto = {
+      nickname,
+      profile_image: profile_image?.location,
+    };
+
     res.status(200).json({
       success: true,
       message: "사용자 정보 수정",
       code: "USER_UPDATE_SUCCEEDED",
       timestamp: new Date().toISOString(),
+      data: {
+        user: responseDto,
+      },
     });
   } catch (error) {
     throw error;
