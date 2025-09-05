@@ -6,8 +6,14 @@ import {
   meetingService,
   userService,
   userSessionService,
+  workoutService,
 } from "../services";
-import { MealState, UserUpdateDto, UserUpdateResponseDto } from "../types";
+import {
+  MealState,
+  UserUpdateDto,
+  UserUpdateResponseDto,
+  WorkoutCreateDto,
+} from "../types";
 import { deleteImage } from "../utils";
 
 // 사용자 조회
@@ -113,8 +119,57 @@ export const getWorkoutListById = async (req: Request, res: Response) => {
   }
 };
 
-// 운동 일지 생성
+// 운동 일지 생성 (첫 생성 시 )
 export const createWorkout = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workout_name, duration, calories, feedback, running, fitness } =
+    req.body;
+
+  if (!workout_name) {
+    throw new BadRequestError("운동 종류 필수");
+  }
+
+  if (!duration) {
+    throw new BadRequestError("운동 시간 필수");
+  }
+
+  if (!calories) {
+    throw new BadRequestError("칼로리 필수");
+  }
+
+  if (!running && !fitness) {
+    throw new BadRequestError("running 혹은 fitness 정보 필수");
+  }
+
+  try {
+    const workoutCreate = {
+      userId: user._id,
+      workout_name,
+      duration,
+      calories,
+      feedback,
+      running,
+      fitness,
+    } as WorkoutCreateDto;
+
+    const workout = await workoutService.createWorkout(workoutCreate);
+
+    res.status(201).json({
+      success: true,
+      message: "운동일지 생성 성공",
+      code: "WORKOUT_CREATION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workout,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 운동 일지 상세 생성 (이미 운동일지가 생성된 경우)
+export const createWorkoutDetail = async (req: Request, res: Response) => {
   try {
   } catch (error) {
     throw error;

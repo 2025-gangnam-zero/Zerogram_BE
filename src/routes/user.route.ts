@@ -13,6 +13,7 @@ import {
   updateMe,
   updateWorkoutById,
   getMeetingListByUserId,
+  createWorkoutDetail,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -31,6 +32,7 @@ export default () => {
   router.get("/users/me/workouts", authChecker, getWorkoutListById);
   router.post("/users/me/workouts", createWorkout);
   router.get("/users/me/workouts/:workoutid", getWorkoutById);
+  router.post("/users/me/workouts/:workoutid", createWorkoutDetail);
   router.patch("/users/me/workouts/:workoutid", updateWorkoutById);
   router.delete("/users/me/workouts/:workoutid", deleteWorkoutById);
   router.get("/users/me/diets", getDietById);
