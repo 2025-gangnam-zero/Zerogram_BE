@@ -170,7 +170,46 @@ export const createWorkout = async (req: Request, res: Response) => {
 
 // 운동 일지 상세 생성 (이미 운동일지가 생성된 경우)
 export const createWorkoutDetail = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workoutid } = req.params;
+  const { workout_name, running, fitness } = req.body;
+
+  if (!workoutid) {
+    throw new BadRequestError("운동일지 아이디 필수");
+  }
+
+  if (!workout_name) {
+    throw new BadRequestError("운동 종류 필수");
+  }
+
+  if (!running && !fitness) {
+    throw new BadRequestError("러닝 혹은 피트니스 필수");
+  }
+
   try {
+    // 운동 일지 아이디 변경
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+
+    // 운동일지 상세
+    const detail = running || fitness;
+
+    // 운동일지 상세 생성
+    const workout = await workoutService.createWorkoutDetail(
+      workoutId,
+      workout_name,
+      detail,
+      user._id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 상세 생성 성공",
+      code: "WORKOUT_DETAIL_CREATION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workout,
+      },
+    });
   } catch (error) {
     throw error;
   }

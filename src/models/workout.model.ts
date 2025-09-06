@@ -16,6 +16,17 @@ const RunningSchema = new mongoose.Schema<RunningType>(
       type: Number,
       default: 0,
     },
+    duration: {
+      type: Number,
+      default: 0,
+    },
+    calories: {
+      type: Number,
+      default: 0,
+    },
+    feedback: {
+      type: String,
+    },
   },
   {
     versionKey: false,
@@ -52,6 +63,17 @@ const FitnessSchema = new mongoose.Schema<FitnessType>(
       type: Number,
       default: 0,
     },
+    duration: {
+      type: Number,
+      default: 0,
+    },
+    calories: {
+      type: Number,
+      default: 0,
+    },
+    feedback: {
+      type: String,
+    },
   },
   {
     versionKey: false,
@@ -72,14 +94,6 @@ const WorkoutSchema = new mongoose.Schema<WorkoutState>(
       type: String,
       enum: ["running", "fitness"],
       required: true,
-    },
-    duration: {
-      type: Number,
-      default: 0,
-    },
-    calories: {
-      type: Number,
-      default: 0,
     },
     feedback: {
       type: String,

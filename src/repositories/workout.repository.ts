@@ -9,6 +9,15 @@ import { Fitness, Running, Workout } from "../models";
 import { Types } from "mongoose";
 
 class WorkoutRepository {
+  async getWorkoutById(workoutId: Types.ObjectId) {
+    try {
+      const workout = await Workout.findById({ _id: workoutId }).lean();
+
+      return workout;
+    } catch (error) {
+      throw mongoDBErrorHandler("getWorkoutById", error);
+    }
+  }
   async createWorkout(workout: WorkoutCreateDto): Promise<WorkoutState> {
     try {
       const newWorkout = await Workout.create(workout);
