@@ -195,6 +195,25 @@ class WorkoutService {
       throw error;
     }
   }
+
+  // 운동일지 삭제
+  async deleteWorkoutById(workoutId: Types.ObjectId, userId: Types.ObjectId) {
+    try {
+      const workout = await this.getWorkoutById(workoutId);
+
+      if (workout.userId !== userId) {
+        throw new UnauthorizedError("운동일지 삭제 권한 없음");
+      }
+
+      const result = await workoutRepository.deleteWorkout(workoutId);
+
+      if (!result.acknowledged || result.deletedCount === 0) {
+        throw new InternalServerError("운동일지 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new WorkoutService();

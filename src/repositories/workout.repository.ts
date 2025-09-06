@@ -128,6 +128,17 @@ class WorkoutRepository {
       throw mongoDBErrorHandler("updateWorkout", error);
     }
   }
+
+  // 운동일지 삭제
+  async deleteWorkout(workoutId: Types.ObjectId) {
+    try {
+      const result = await Workout.deleteOne({ _id: workoutId });
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteWorkout", error);
+    }
+  }
 }
 
 export default new WorkoutRepository();

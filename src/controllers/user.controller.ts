@@ -296,7 +296,24 @@ export const updateWorkoutById = async (req: Request, res: Response) => {
 
 // 운동 일지 삭제
 export const deleteWorkoutById = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workoutid } = req.params;
+
+  if (!workoutid) {
+    throw new BadRequestError("운동일지 아이디 필수");
+  }
+
   try {
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+
+    await workoutService.deleteWorkoutById(workoutId, user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 삭제 성공",
+      code: "WORKOUT_DELETION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
     throw error;
   }
