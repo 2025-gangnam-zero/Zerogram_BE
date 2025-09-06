@@ -113,7 +113,19 @@ export const deleteMe = async (req: Request, res: Response) => {
 
 // 운동 일지 목록 조회
 export const getWorkoutListById = async (req: Request, res: Response) => {
+  const user = req.user;
   try {
+    const workouts = await workoutService.getWoroutListByUserId(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "사용자 운동일지 목록 조회 성공",
+      code: "GET_WORKOUT_LIST_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workouts,
+      },
+    });
   } catch (error) {
     throw error;
   }

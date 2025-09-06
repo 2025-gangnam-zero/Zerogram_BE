@@ -24,6 +24,17 @@ class WorkoutService {
     }
   }
 
+  // 사용자 아이디를 이용한 운동일지 목록 조회
+  async getWoroutListByUserId(userId: Types.ObjectId) {
+    try {
+      const workouts = await workoutRepository.getWoroutListByUserId(userId);
+
+      return workouts;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // 러닝 운동일지 생성
   async createRunning(running: RunningType) {
     try {

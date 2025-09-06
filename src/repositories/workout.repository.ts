@@ -9,6 +9,7 @@ import { Fitness, Running, Workout } from "../models";
 import { Types } from "mongoose";
 
 class WorkoutRepository {
+  // 운동일지 아이디를 이용한 운동일지 조회
   async getWorkoutById(workoutId: Types.ObjectId) {
     try {
       const workout = await Workout.findById({ _id: workoutId }).lean();
@@ -18,6 +19,19 @@ class WorkoutRepository {
       throw mongoDBErrorHandler("getWorkoutById", error);
     }
   }
+
+  // 사용자 운동일지 조회
+  async getWoroutListByUserId(userId: Types.ObjectId) {
+    try {
+      const workouts = await Workout.find({ userId }).lean();
+
+      return workouts;
+    } catch (error) {
+      throw mongoDBErrorHandler("getWorkoutListByUserId", error);
+    }
+  }
+
+  // 운동일지 생성
   async createWorkout(workout: WorkoutCreateDto): Promise<WorkoutState> {
     try {
       const newWorkout = await Workout.create(workout);
@@ -28,6 +42,7 @@ class WorkoutRepository {
     }
   }
 
+  // 러닝 생성
   async createRunning(running: RunningType) {
     try {
       const newRunning = await Running.create(running);
@@ -38,6 +53,7 @@ class WorkoutRepository {
     }
   }
 
+  // 피트니스 생성
   async createFitness(fitness: FitnessType) {
     try {
       const newFitness = await Fitness.create(fitness);
@@ -48,6 +64,7 @@ class WorkoutRepository {
     }
   }
 
+  // 운동일지 러닝 업데이트
   async updateWorkoutRunning(workoutId: Types.ObjectId, running: RunningType) {
     try {
       const result = await Workout.findOneAndUpdate(
@@ -68,6 +85,7 @@ class WorkoutRepository {
     }
   }
 
+  // 운동일지 피트니스 업데이트
   async updateWorkoutFitness(workoutId: Types.ObjectId, fitness: FitnessType) {
     try {
       const newFitness = await Workout.findOneAndUpdate(
