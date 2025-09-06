@@ -235,7 +235,7 @@ export const getWorkoutById = async (req: Request, res: Response) => {
   if (!workoutid) {
     throw new BadRequestError("운동일지 아이디 필수");
   }
-  
+
   try {
     const workoutId = new mongoose.Types.ObjectId(workoutid);
 
@@ -259,13 +259,40 @@ export const getWorkoutById = async (req: Request, res: Response) => {
   }
 };
 
-// 운동 일지 수정
+// 운동 일지 수정 : 운동일지 전체 수정
 export const updateWorkoutById = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workoutid } = req.params;
+  const { feedback } = req.body;
+
+  if (!feedback) {
+    throw new BadRequestError("피드백 필수");
+  }
+
   try {
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+
+    const workout = await workoutService.updateWorkout(
+      workoutId,
+      { feedback },
+      user._id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 수정 성공",
+      code: "UPDATE_WORKOUT_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workout,
+      },
+    });
   } catch (error) {
     throw error;
   }
 };
+
+// 운동일지 상세 수정
 
 // 운동 일지 삭제
 export const deleteWorkoutById = async (req: Request, res: Response) => {

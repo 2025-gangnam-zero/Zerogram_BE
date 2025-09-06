@@ -5,6 +5,7 @@ import {
   RunningType,
   WorkoutCreateDto,
   WorkoutType,
+  WorkoutUpdateDto,
 } from "../types";
 import { InternalServerError, UnauthorizedError } from "../errors";
 
@@ -162,6 +163,34 @@ class WorkoutService {
       if (!newWorkout) throw new InternalServerError("피트니스 추가 실패");
 
       return newWorkout;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 운동일지 전체 업데이트
+  async updateWorkout(
+    workoutId: Types.ObjectId,
+    updatedWorkout: WorkoutUpdateDto,
+    userId: Types.ObjectId
+  ) {
+    try {
+      const workout = await this.getWorkoutById(workoutId);
+
+      if (workout.userId !== userId) {
+        throw new UnauthorizedError("운동일지 수정 권한 없음");
+      }
+
+      const result = await workoutRepository.updateWorkout(
+        workoutId,
+        updatedWorkout
+      );
+
+      if (!result) {
+        throw new InternalServerError("운동일지 수정 실패");
+      }
+
+      return result;
     } catch (error) {
       throw error;
     }

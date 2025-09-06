@@ -4,6 +4,7 @@ import {
   RunningType,
   WorkoutCreateDto,
   WorkoutState,
+  WorkoutUpdateDto,
 } from "../types";
 import { Fitness, Running, Workout } from "../models";
 import { Types } from "mongoose";
@@ -107,6 +108,24 @@ class WorkoutRepository {
       return newFitness;
     } catch (error) {
       throw mongoDBErrorHandler("updateWorkoutFitness", error);
+    }
+  }
+
+  // 운동일지 수정
+  async updateWorkout(
+    workoutId: Types.ObjectId,
+    updatedWorkout: WorkoutUpdateDto
+  ) {
+    try {
+      const result = await Workout.findOneAndUpdate(
+        { _id: workoutId },
+        { ...updatedWorkout },
+        { new: true }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("updateWorkout", error);
     }
   }
 }

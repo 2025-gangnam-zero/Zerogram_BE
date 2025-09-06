@@ -48,3 +48,7 @@ export interface WorkoutCreateDto {
   running?: RunningType;
   fitness?: FitnessType;
 }
+
+export interface WorkoutUpdateDto {
+  feedback: string;
+}
