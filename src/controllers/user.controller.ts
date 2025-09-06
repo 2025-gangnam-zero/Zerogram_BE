@@ -292,8 +292,6 @@ export const updateWorkoutById = async (req: Request, res: Response) => {
   }
 };
 
-// 운동일지 상세 수정
-
 // 운동 일지 삭제
 export const deleteWorkoutById = async (req: Request, res: Response) => {
   const user = req.user;
@@ -313,6 +311,46 @@ export const deleteWorkoutById = async (req: Request, res: Response) => {
       message: "운동일지 삭제 성공",
       code: "WORKOUT_DELETION_SUCCEEDED",
       timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 운동일지 상세 조회
+export const getWorkoutDetail = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: "운동일지 상세 조회",
+      code: "GET_WORKOUT_DETAIL_SUCCEEDED",
+      data: {},
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+// 운동일지 상세 수정
+export const updateWorkoutDetail = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: "운동일지 상세 조회",
+      code: "UPDATE_WORKOUT_DETAIL_SUCCEEDED",
+      data: {},
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 운동일지 상세 삭제
+export const deleteWorkoutDetail = async (req: Request, res: Response) => {
+  try {
+    res.status(200).json({
+      success: true,
+      message: "운동일지 상세 조회",
+      code: "WORKOUT_DETAIL_DELETION_SUCCEEDED",
     });
   } catch (error) {
     throw error;
