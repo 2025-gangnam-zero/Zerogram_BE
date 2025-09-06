@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { BadRequestError } from "../errors";
+import { BadRequestError, UnauthorizedError } from "../errors";
 import {
   dietService,
   meetingService,
@@ -229,7 +229,31 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
 
 // 운동 일지 조회
 export const getWorkoutById = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workoutid } = req.params;
+
+  if (!workoutid) {
+    throw new BadRequestError("운동일지 아이디 필수");
+  }
+  
   try {
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+
+    const workout = await workoutService.getWorkoutById(workoutId);
+
+    if (workout.userId !== user._id) {
+      throw new UnauthorizedError("운동일지 조회 권한 없음");
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 상세 조회 성공",
+      code: "WORKOUT_DETAIL_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      date: {
+        workout,
+      },
+    });
   } catch (error) {
     throw error;
   }
