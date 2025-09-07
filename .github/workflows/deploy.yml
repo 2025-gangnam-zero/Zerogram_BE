@@ -1,0 +1,106 @@
+name: deploy-zerogram-server
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  deploy-zerogram-server:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      APP_ROOT: /var/www/zerogram
+      RELEASE_DIR: /var/www/zerogram/releases
+      NODE_VERSION: 22
+
+    steps:
+      # 1) 코드 체크아웃
+      - uses: actions/checkout@v4
+
+      # 2) Node.js 설치 (+ 캐시 옵션은 선택)
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          # cache: 'npm'   # <-- 선택: 빌드 빨라짐
+
+      # 3) 의존성 설치
+      - name: Install deps
+        run: npm ci
+
+      # 4) 빌드(있으면 실행)
+      - name: Build
+        run: npm run build --if-present
+
+      # 5) 배포 번들(tgz) 생성
+      - name: Create bundle
+        run: |
+          RELEASE=$(date +%Y%m%d%H%M%S)
+          echo "RELEASE=$RELEASE" >> $GITHUB_ENV
+          mkdir -p bundle
+          tar -czf bundle/app-$RELEASE.tgz \
+            --exclude=".git" \
+            --exclude="node_modules" \
+            package.json package-lock.json \
+            dist \
+            ecosystem.config.js \
+            || true
+          # ↑ 만약 런타임에 src도 필요하면 위 'dist' 아래에 'src'를 추가하세요.
+
+      # 6) EC2로 번들 전송
+      - name: Upload bundle to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }} # ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }} # 로컬에서 만든 개인키 전체 내용
+          source: bundle/*.tgz
+          target: /tmp
+          # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
+
+      # 7) EC2에서 배포 실행
+      - name: Deploy on EC2
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }} # ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
+          script: |
+            set -e
+            RELEASE=${{ env.RELEASE }}
+            APP_ROOT=${{ env.APP_ROOT }}
+            RELEASE_DIR=${{ env.RELEASE_DIR }}
+
+            # 릴리즈 폴더 생성 & 아티팩트 전개
+            mkdir -p "$RELEASE_DIR/$RELEASE"
+            tar -xzf /tmp/app-$RELEASE.tgz -C "$RELEASE_DIR/$RELEASE"
+            rm -f /tmp/app-$RELEASE.tgz
+
+            cd "$RELEASE_DIR/$RELEASE"
+
+            # 프로덕션 의존성만 설치
+            npm ci --omit=dev
+
+            # (옵션) Prisma 사용 시 마이그레이션
+            if [ -d "prisma" ]; then
+              npx prisma migrate deploy || true
+            fi
+
+            # (옵션) .env가 있으면 심볼릭 링크 연결
+            if [ -f "$APP_ROOT/shared/.env" ]; then
+              ln -sf "$APP_ROOT/shared/.env" "$RELEASE_DIR/$RELEASE/.env"
+            fi
+
+            # PM2 무중단 재적재 (없으면 start)
+            if pm2 startOrReload ecosystem.config.js --env production; then
+              echo "PM2 reloaded"
+            else
+              pm2 start ecosystem.config.js --env production
+            fi
+
+            # current 링크를 새 릴리즈로 전환
+            ln -sfn "$RELEASE_DIR/$RELEASE" "$APP_ROOT/current"
+
+            # 재부팅 자동 시작 저장(선택)
+            pm2 save
