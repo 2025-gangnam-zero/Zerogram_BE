@@ -18,11 +18,11 @@ jobs:
       # 1) 코드 체크아웃
       - uses: actions/checkout@v4
 
-      # 2) Node.js 설치 (+ 캐시 옵션은 선택)
+      # 2) Node.js 설치
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # cache: 'npm'   # <-- 선택: 빌드 빨라짐
+          # cache: 'npm'   # (선택) 켜면 빌드 빨라짐
 
       # 3) 의존성 설치
       - name: Install deps
@@ -45,25 +45,25 @@ jobs:
             dist \
             ecosystem.config.js \
             || true
-          # ↑ 만약 런타임에 src도 필요하면 위 'dist' 아래에 'src'를 추가하세요.
+          # ↑ 런타임에 src가 필요하면 'dist' 아래에 'src'도 추가하세요.
 
-      # 6) EC2로 번들 전송
+      # 6) EC2로 번들 전송 (정확한 파일명 업로드)
       - name: Upload bundle to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }} # ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }} # 로컬에서 만든 개인키 전체 내용
-          source: bundle/*.tgz
+          username: ${{ secrets.EC2_USER }}   # ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: bundle/app-${{ env.RELEASE }}.tgz
           target: /tmp
           # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
 
-      # 7) EC2에서 배포 실행
+      # 7) EC2에서 배포 실행 (업로드 경로 보정 포함)
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }} # ec2-user
+          username: ${{ secrets.EC2_USER }}   # ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
           script: |
@@ -72,10 +72,22 @@ jobs:
             APP_ROOT=${{ env.APP_ROOT }}
             RELEASE_DIR=${{ env.RELEASE_DIR }}
 
-            # 릴리즈 폴더 생성 & 아티팩트 전개
+            # 디버그(선택): 업로드 위치 확인
+            ls -l /tmp || true
+            ls -l /tmp/bundle || true
+
+            # 릴리즈 폴더 생성
             mkdir -p "$RELEASE_DIR/$RELEASE"
-            tar -xzf /tmp/app-$RELEASE.tgz -C "$RELEASE_DIR/$RELEASE"
-            rm -f /tmp/app-$RELEASE.tgz
+
+            # 업로드 파일 경로 보정 (scp가 /tmp/bundle/에 둘 수 있음)
+            TARBALL="/tmp/app-$RELEASE.tgz"
+            if [ ! -f "$TARBALL" ]; then
+              TARBALL="/tmp/bundle/app-$RELEASE.tgz"
+            fi
+
+            # 아티팩트 전개
+            tar -xzf "$TARBALL" -C "$RELEASE_DIR/$RELEASE"
+            rm -f "$TARBALL"
 
             cd "$RELEASE_DIR/$RELEASE"
 
@@ -104,3 +116,7 @@ jobs:
 
             # 재부팅 자동 시작 저장(선택)
             pm2 save
+
+            # (선택) 오래된 릴리즈 정리: 최신 5개만 남김
+            cd "$RELEASE_DIR"
+            ls -1tr | head -n -5 | xargs -r rm -rf
