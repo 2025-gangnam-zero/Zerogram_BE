@@ -1,8 +1,14 @@
 name: deploy-zerogram-server
+
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
+
+# 동시 실행 방지(진행 중이면 이전 실행 취소)
+concurrency:
+  group: deploy-zerogram-server
+  cancel-in-progress: true
 
 jobs:
   deploy-zerogram-server:
@@ -22,70 +28,63 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          # cache: 'npm'   # (선택) 켜면 빌드 빨라짐
+          # cache: npm   # (선택) 빌드 속도 개선 시 사용
 
       # 3) 의존성 설치
       - name: Install deps
         run: npm ci
 
-      # 4) 빌드(있으면 실행)
+      # 4) 빌드(있으면)
       - name: Build
         run: npm run build --if-present
 
-      # 5) 배포 번들(tgz) 생성
+      # 5) 배포 번들(tgz) 생성 (에러 삼키지 않음)
       - name: Create bundle
         run: |
+          set -e
           RELEASE=$(date +%Y%m%d%H%M%S)
           echo "RELEASE=$RELEASE" >> $GITHUB_ENV
           mkdir -p bundle
+          # 런타임에 필요한 파일만 포함
           tar -czf bundle/app-$RELEASE.tgz \
             --exclude=".git" \
             --exclude="node_modules" \
-            package.json package-lock.json \
             dist \
-            ecosystem.config.js \
-            || true
-          # ↑ 런타임에 src가 필요하면 'dist' 아래에 'src'도 추가하세요.
+            package.json package-lock.json \
+            ecosystem.config.js
+          # ※ dist/server.js가 진입점이어야 하며, ecosystem은 cwd=/var/www/zerogram/current 권장
 
-      # 6) EC2로 번들 전송 (정확한 파일명 업로드)
+      # 6) EC2로 번들 전송
       - name: Upload bundle to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}   # ec2-user
+          username: ${{ secrets.EC2_USER }} # ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           source: bundle/app-${{ env.RELEASE }}.tgz
           target: /tmp
-          # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
+          # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 주석 해제
 
-      # 7) EC2에서 배포 실행 (업로드 경로 보정 포함)
-      - name: Deploy on EC2
+      # 7) EC2에서 무중단 배포 (current 전환 → pm2 reload)
+      - name: Deploy on EC2 (zero-downtime)
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}   # ec2-user
+          username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          # port: ${{ secrets.EC2_PORT }}     # 22가 아니면 사용
+          # port: ${{ secrets.EC2_PORT }}
           script: |
-            set -e
+            set -euo pipefail
+
             RELEASE=${{ env.RELEASE }}
             APP_ROOT=${{ env.APP_ROOT }}
             RELEASE_DIR=${{ env.RELEASE_DIR }}
+            SHARED_DIR="$APP_ROOT/shared"
 
-            # 디버그(선택): 업로드 위치 확인
-            ls -l /tmp || true
-            ls -l /tmp/bundle || true
-
-            # 릴리즈 폴더 생성
+            # 릴리즈 폴더 생성 및 아티팩트 전개
             mkdir -p "$RELEASE_DIR/$RELEASE"
-
-            # 업로드 파일 경로 보정 (scp가 /tmp/bundle/에 둘 수 있음)
             TARBALL="/tmp/app-$RELEASE.tgz"
-            if [ ! -f "$TARBALL" ]; then
-              TARBALL="/tmp/bundle/app-$RELEASE.tgz"
-            fi
-
-            # 아티팩트 전개
+            [ -f "$TARBALL" ] || TARBALL="/tmp/bundle/app-$RELEASE.tgz"
             tar -xzf "$TARBALL" -C "$RELEASE_DIR/$RELEASE"
             rm -f "$TARBALL"
 
@@ -94,29 +93,31 @@ jobs:
             # 프로덕션 의존성만 설치
             npm ci --omit=dev
 
-            # (옵션) Prisma 사용 시 마이그레이션
-            if [ -d "prisma" ]; then
-              npx prisma migrate deploy || true
+            # 공유 자원(.env, uploads, logs) 심볼릭 링크
+            mkdir -p "$SHARED_DIR" "$SHARED_DIR/uploads" "$SHARED_DIR/logs"
+            [ -f "$SHARED_DIR/.env" ] && ln -sfn "$SHARED_DIR/.env" "$RELEASE_DIR/$RELEASE/.env"
+            ln -sfn "$SHARED_DIR/uploads" "$RELEASE_DIR/$RELEASE/uploads"
+            ln -sfn "$SHARED_DIR/logs"    "$RELEASE_DIR/$RELEASE/logs"
+
+            # (권장) ecosystem을 shared에 두고 각 릴리즈에 링크
+            if [ -f "$SHARED_DIR/ecosystem.config.js" ]; then
+              ln -sfn "$SHARED_DIR/ecosystem.config.js" "$RELEASE_DIR/$RELEASE/ecosystem.config.js"
             fi
 
-            # (옵션) .env가 있으면 심볼릭 링크 연결
-            if [ -f "$APP_ROOT/shared/.env" ]; then
-              ln -sf "$APP_ROOT/shared/.env" "$RELEASE_DIR/$RELEASE/.env"
-            fi
-
-            # PM2 무중단 재적재 (없으면 start)
-            if pm2 startOrReload ecosystem.config.js --env production; then
-              echo "PM2 reloaded"
-            else
-              pm2 start ecosystem.config.js --env production
-            fi
-
-            # current 링크를 새 릴리즈로 전환
+            # 1) current 링크를 새 릴리즈로 전환
             ln -sfn "$RELEASE_DIR/$RELEASE" "$APP_ROOT/current"
 
-            # 재부팅 자동 시작 저장(선택)
+            # 2) PM2 무중단 재적재(없으면 start)
+            if pm2 reload "$APP_ROOT/current/ecosystem.config.js" --env production; then
+              echo "PM2 reloaded"
+            else
+              pm2 start "$APP_ROOT/current/ecosystem.config.js" --env production
+            fi
+
             pm2 save
 
-            # (선택) 오래된 릴리즈 정리: 최신 5개만 남김
-            cd "$RELEASE_DIR"
-            ls -1tr | head -n -5 | xargs -r rm -rf
+            # 3) 오래된 릴리즈 정리(최근 5개만 유지)
+            ls -1dt "$RELEASE_DIR"/* | tail -n +6 | xargs -r rm -rf
+
+            # (선택) 헬스체크 엔드포인트가 있다면 배포 검증
+            # curl -fsS http://127.0.0.1:4000/healthz
