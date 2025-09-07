@@ -118,6 +118,3 @@ jobs:
 
             # 3) 오래된 릴리즈 정리(최근 5개만 유지)
             ls -1dt "$RELEASE_DIR"/* | tail -n +6 | xargs -r rm -rf
-
-            # (선택) 헬스체크 엔드포인트가 있다면 배포 검증
-            # curl -fsS http://127.0.0.1:4000/healthz
