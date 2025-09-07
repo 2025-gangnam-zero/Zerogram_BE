@@ -11,7 +11,7 @@ import { CLIENT_URL, PORT } from "./constants";
 const env = process.env.NODE_ENV || "local";
 
 dotenv.config({
-  path: `.env.${env}`,
+  path: process.env.DOTENV_CONFIG_PATH || `.env.${env}`,
 });
 
 const app = express();
