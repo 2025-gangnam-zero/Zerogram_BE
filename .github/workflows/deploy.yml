@@ -18,7 +18,7 @@ jobs:
     env:
       APP_ROOT: /var/www/zerogram
       RELEASE_DIR: /var/www/zerogram/releases
-      NODE_VERSION: 22
+      NODE_VERSION: 18
 
     steps:
       # 1) 코드 체크아웃

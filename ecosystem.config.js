@@ -2,6 +2,7 @@ module.exports = {
   apps: [
     {
       name: "zerogram",
+      cwd: "/var/www/zerogram/current",
       script: "dist/server.js",
       instances: "max",
       exec_mode: "cluster",
