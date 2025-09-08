@@ -11,7 +11,6 @@ import {
   getWorkoutListById,
   updateDietFeedbackById,
   updateMe,
-  updateWorkoutById,
   getMeetingListByUserId,
   createWorkoutDetail,
   getWorkoutDetail,
@@ -32,33 +31,51 @@ export default () => {
     updateMe
   );
   router.delete("/users/me", authChecker, deleteMe);
+  // --------------------------------------------------------------------------
+  // 운동일지 목록 조회
   router.get("/users/me/workouts", authChecker, getWorkoutListById);
-  router.post("/users/me/workouts", createWorkout);
-  router.get("/users/me/workouts/:workoutid", getWorkoutById);
-  router.post("/users/me/workouts/:workoutid", createWorkoutDetail);
-  router.patch("/users/me/workouts/:workoutid", updateWorkoutById);
-  router.delete("/users/me/workouts/:workoutid", deleteWorkoutById);
+  // 운동일지 생성
+  router.post("/users/me/workouts", authChecker, createWorkout);
+  // 운동일지 조회
+  router.get("/users/me/workouts/:workoutid", authChecker, getWorkoutById);
+  // 운동일지 상세 생성
+  router.post(
+    "/users/me/workouts/:workoutid",
+    authChecker,
+    createWorkoutDetail
+  );
+  // 운동일지 삭제
+  router.delete(
+    "/users/me/workouts/:workoutid",
+    authChecker,
+    deleteWorkoutById
+  );
+  // --------------------------------------------------------------------------
   // 운동일지 상세 조회
   router.get(
-    "/users/me/workouts/:workoutid/detail/:detailid",
+    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    authChecker,
     getWorkoutDetail
   );
   // 운동일지 상세 수정
   router.patch(
-    "/users/me/workouts/:workoutid/detail/:detailid",
+    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    authChecker,
     updateWorkoutDetail
   );
   // 운동일지 상세 삭제
   router.delete(
-    "/users/me/workouts/:workoutid/detail/:detailid",
+    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    authChecker,
     deleteWorkoutDetail
   );
-  router.get("/users/me/diets", getDietById);
-  router.post("/users/me/diets", createDiet);
-  router.get("/users/me/diets/:dietid", getDietById);
-  router.patch("/users/me/diets/:dietid", updateDietFeedbackById);
-  router.delete("/users/me/diets/:dietid", deleteDietById);
-  router.get("/users/me/meetings", getMeetingListByUserId);
+  // --------------------------------------------------------------------------
+  router.get("/users/me/diets", authChecker, getDietById);
+  router.post("/users/me/diets", authChecker, createDiet);
+  router.get("/users/me/diets/:dietid", authChecker, getDietById);
+  router.patch("/users/me/diets/:dietid", authChecker, updateDietFeedbackById);
+  router.delete("/users/me/diets/:dietid", authChecker, deleteDietById);
+  router.get("/users/me/meetings", authChecker, getMeetingListByUserId);
 
   return router;
 };

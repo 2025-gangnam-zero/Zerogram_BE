@@ -1,13 +1,17 @@
 import mongoose, { Types } from "mongoose";
 import { workoutRepository } from "../repositories";
 import {
-  FitnessType,
-  RunningType,
   WorkoutCreateDto,
-  WorkoutType,
-  WorkoutUpdateDto,
+  WorkoutDetailCreateDto,
+  WorkoutDetailState,
+  WorkoutDetailUpdateDto,
+  WorkoutState,
 } from "../types";
-import { InternalServerError, UnauthorizedError } from "../errors";
+import {
+  InternalServerError,
+  NotFoundError,
+  UnauthorizedError,
+} from "../errors";
 
 class WorkoutService {
   // workoutId를 이용한 운동일지 조회
@@ -16,10 +20,22 @@ class WorkoutService {
       const workout = await workoutRepository.getWorkoutById(workoutId);
 
       if (!workout) {
-        throw new InternalServerError("운동일지 조회 실패");
+        throw new NotFoundError("운동일지 조회 실패");
       }
 
-      return workout;
+      const detailIds: Types.ObjectId[] = workout.details;
+
+      const details =
+        detailIds.length > 0
+          ? await Promise.all(
+              detailIds.map((detailId) => this.getWorkoutDetailById(detailId))
+            )
+          : [];
+
+      return {
+        ...workout,
+        details,
+      };
     } catch (error) {
       throw error;
     }
@@ -36,98 +52,49 @@ class WorkoutService {
     }
   }
 
-  // 러닝 운동일지 생성
-  async createRunning(running: RunningType) {
+  // 운동일지 상세 생성
+  async createWorkoutDetail(workoutDetail: WorkoutDetailCreateDto) {
     try {
-      const newRunning = await workoutRepository.createRunning(running);
+      const newDetail = await workoutRepository.createWorkoutDetail(
+        workoutDetail
+      );
 
-      if (!newRunning) throw new InternalServerError("러닝 운동일지 생성 실패");
+      if (!newDetail) {
+        throw new InternalServerError("운동일지 상세 생성 실패");
+      }
 
-      return newRunning;
+      return newDetail;
     } catch (error) {
       throw error;
     }
   }
 
-  // 피트니스 운동일지 생성
-  async createFitness(fitness: FitnessType) {
+  // 운동 일지 생성
+  async createWorkout(userId: Types.ObjectId): Promise<WorkoutState> {
     try {
-      const newFitness = await workoutRepository.createFitness(fitness);
+      const newWorkout = await workoutRepository.createWorkout(userId);
 
-      if (!newFitness) throw new InternalServerError("피트니스 생성 실패");
+      if (!newWorkout) throw new InternalServerError("운동일지 생성 실패");
 
-      return newFitness;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // 운동일지 생성
-  async createWorkout(workout: WorkoutCreateDto) {
-    const { running, fitness, ...rest } = workout;
-    const session = await mongoose.startSession();
-    session.startTransaction();
-
-    try {
-      // 운동일지 생성
-      let newWorkout = await workoutRepository.createWorkout(rest);
-
-      // 운동 일지 상세 생성
-      if (workout.workout_name === "running" && running) {
-        const newRuning = await this.createRunning({
-          ...running,
-          workoutId: newWorkout._id,
-        });
-
-        newWorkout = await this.updateWorkoutRunning(newWorkout._id, newRuning);
-      } else if (workout.workout_name === "fitness" && fitness) {
-        const newFitness = await this.createFitness({
-          ...fitness,
-          workoutId: newWorkout._id,
-        });
-
-        newWorkout = await this.updateWorkoutFitness(
-          newWorkout._id,
-          newFitness
-        );
-      }
-
-      if (!newWorkout) {
-        throw new InternalServerError("운동 일지 생성 실패");
-      }
-
-      await session.commitTransaction();
       return newWorkout;
     } catch (error) {
-      session.abortTransaction();
       throw error;
-    } finally {
-      session.endSession();
     }
   }
 
-  // 운동 일지 상세 생성
-  async createWorkoutDetail(
+  // 운동 일지 상세 추가
+  async addNewWorkoutDetails(
     workoutId: Types.ObjectId,
-    workout_name: WorkoutType,
-    detail: RunningType | FitnessType,
-    userId: Types.ObjectId
+    details: WorkoutDetailState[]
   ) {
     try {
-      let workout = await this.getWorkoutById(workoutId);
+      const workout = await workoutRepository.addWorkoutDetail(
+        workoutId,
+        details
+      );
 
-      if (workout.userId !== userId) {
-        throw new UnauthorizedError("운동일지 상세 생성 권한 없음");
-      }
-
-      if (workout_name === "running") {
-        const running = await this.createRunning(detail as RunningType);
-
-        workout = await this.updateWorkoutRunning(workoutId, running);
-      } else if (workout_name === "fitness") {
-        const fitness = await this.createFitness(detail as FitnessType);
-
-        workout = await this.updateWorkoutFitness(workoutId, fitness);
+      if (!workout) {
+        throw new InternalServerError("운동 일지 상세 추가 실패");
       }
 
       return workout;
@@ -136,65 +103,84 @@ class WorkoutService {
     }
   }
 
-  // 러닝 업데이트
-  async updateWorkoutRunning(workoutId: Types.ObjectId, running: RunningType) {
-    try {
-      const newWorkout = await workoutRepository.updateWorkoutRunning(
-        workoutId,
-        running
-      );
-
-      if (!newWorkout) throw new InternalServerError("러닝 일지 추가 실패");
-
-      return newWorkout;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // 피트니스 업데이트
-  async updateWorkoutFitness(workoutId: Types.ObjectId, fitness: FitnessType) {
-    try {
-      const newWorkout = await workoutRepository.updateWorkoutFitness(
-        workoutId,
-        fitness
-      );
-
-      if (!newWorkout) throw new InternalServerError("피트니스 추가 실패");
-
-      return newWorkout;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // 운동일지 전체 업데이트
-  async updateWorkout(
+  // 운동 일지 상세 생성 및 운동일지에 운동일지 상세 추가
+  async createNewWorkoutDetailsAndAddToWorkout(
     workoutId: Types.ObjectId,
-    updatedWorkout: WorkoutUpdateDto,
-    userId: Types.ObjectId
+    details: WorkoutDetailCreateDto[]
   ) {
     try {
-      const workout = await this.getWorkoutById(workoutId);
-
-      if (workout.userId !== userId) {
-        throw new UnauthorizedError("운동일지 수정 권한 없음");
-      }
-
-      const result = await workoutRepository.updateWorkout(
-        workoutId,
-        updatedWorkout
+      const newDetails = await Promise.all(
+        details.map((detail) => this.createWorkoutDetail(detail))
       );
 
-      if (!result) {
-        throw new InternalServerError("운동일지 수정 실패");
-      }
+      // 운동일지에 운동일지 상세 추가
+      const workout = await this.addNewWorkoutDetails(workoutId, newDetails);
 
-      return result;
+      return workout;
     } catch (error) {
       throw error;
     }
   }
+
+  // 운동일지 및 운동 상세 생성
+  async createWorkoutAndDetail(workout: WorkoutCreateDto) {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      const { userId, details } = workout;
+
+      // 운동일지 생성
+      const newWorkout = await this.createWorkout(userId);
+
+      const modifiedDetails: WorkoutDetailCreateDto[] = details.map(
+        (detail) => ({
+          ...detail,
+          workoutId: newWorkout._id,
+        })
+      );
+
+      // 운동일지 상세 생성 및 운동일지에 운동일지 상세 추가
+      const updatedWorkout = this.createNewWorkoutDetailsAndAddToWorkout(
+        newWorkout._id,
+        modifiedDetails
+      );
+
+      await session.commitTransaction();
+
+      return updatedWorkout;
+    } catch (error) {
+      session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
+
+  // 운동일지 상세 조회
+  async getWorkoutDetailById(workoutDetailId: Types.ObjectId) {
+    try {
+      const workoutDetail = await workoutRepository.getWorkoutDetailById(
+        workoutDetailId
+      );
+
+      if (!workoutDetail) {
+        throw new InternalServerError("운동일지 상세 조회 실패");
+      }
+
+      return workoutDetail;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 운동일지 상세 수정
+  async updateWorkoutDetailById(
+    userId: Types.ObjectId,
+    workoutId: Types.ObjectId,
+    workoutDetailId: Types.ObjectId,
+    workoutDetail: WorkoutDetailUpdateDto
+  ) {}
 
   // 운동일지 삭제
   async deleteWorkoutById(workoutId: Types.ObjectId, userId: Types.ObjectId) {

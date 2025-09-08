@@ -1,7 +1,7 @@
 import { SERVER_URL } from "./envs";
 
-export const ACCESS_TOKEN_EXPIRESIN = "10m";
-export const REFRESH_TOKEN_EXPIRESIN = "1h";
+export const ACCESS_TOKEN_EXPIRESIN = "1h";
+export const REFRESH_TOKEN_EXPIRESIN = "24h";
 export const PASSWORD_SALT = 10;
 
 // 구글

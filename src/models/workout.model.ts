@@ -1,20 +1,17 @@
 import mongoose, { Schema } from "mongoose";
-import { FitnessType, RunningType, WorkoutState } from "../types";
+import { WorkoutDetailState, WorkoutState } from "../types";
 
-const RunningSchema = new mongoose.Schema<RunningType>(
+const WorkoutDetailSchema = new mongoose.Schema<WorkoutDetailState>(
   {
+    workout_name: {
+      type: String,
+      enum: ["running", "fitness"],
+      required: true,
+    },
     workoutId: {
       type: Schema.Types.ObjectId,
       ref: "Workout",
-      requierd: true,
-    },
-    avg_pace: {
-      type: Number,
-      default: 0,
-    },
-    distance: {
-      type: Number,
-      default: 0,
+      required: true,
     },
     duration: {
       type: Number,
@@ -26,53 +23,45 @@ const RunningSchema = new mongoose.Schema<RunningType>(
     },
     feedback: {
       type: String,
-    },
-  },
-  {
-    versionKey: false,
-    timestamps: true,
-  }
-);
-
-export const Running = mongoose.model("Running", RunningSchema);
-
-const FitnessSchema = new mongoose.Schema<FitnessType>(
-  {
-    workoutId: {
-      type: Schema.Types.ObjectId,
-      ref: "Workout",
-      requierd: true,
     },
     body_part: {
       type: String,
-      required: true,
+      required: function () {
+        return this.workout_name === "fitness";
+      },
     },
     fitness_type: {
       type: String,
-      required: true,
+      required: function () {
+        return this.workout_name === "fitness";
+      },
     },
     sets: {
       type: Number,
-      default: 0,
+      required: function () {
+        return this.workout_name === "fitness";
+      },
     },
     reps: {
       type: Number,
-      default: 0,
+      required: function () {
+        return this.workout_name === "fitness";
+      },
     },
     weight: {
       type: Number,
-      default: 0,
     },
-    duration: {
+    avg_pace: {
       type: Number,
-      default: 0,
+      required: function () {
+        return this.workout_name === "running";
+      },
     },
-    calories: {
+    distance: {
       type: Number,
-      default: 0,
-    },
-    feedback: {
-      type: String,
+      required: function () {
+        return this.workout_name === "running";
+      },
     },
   },
   {
@@ -81,7 +70,10 @@ const FitnessSchema = new mongoose.Schema<FitnessType>(
   }
 );
 
-export const Fitness = mongoose.model("Fitness", FitnessSchema);
+export const WorkoutDetail = mongoose.model(
+  "WorkoutDetail",
+  WorkoutDetailSchema
+);
 
 const WorkoutSchema = new mongoose.Schema<WorkoutState>(
   {
@@ -90,19 +82,10 @@ const WorkoutSchema = new mongoose.Schema<WorkoutState>(
       ref: "User",
       required: true,
     },
-    workout_name: {
-      type: String,
-      enum: ["running", "fitness"],
-      required: true,
-    },
-    feedback: {
-      type: String,
-    },
-    running: {
-      type: RunningSchema,
-    },
-    fitness: {
-      type: [FitnessSchema],
+    details: {
+      type: [Schema.Types.ObjectId],
+      ref: "WorkoutDetail",
+      default: [],
     },
   },
   {
