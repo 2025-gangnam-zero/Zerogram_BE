@@ -1,4 +1,8 @@
-import { mongoDBErrorHandler } from "../utils";
+import {
+  aggregateWorkoutById,
+  aggregateWorkoutsByUserId,
+  mongoDBErrorHandler,
+} from "../utils";
 import { WorkoutDetailState, WorkoutState } from "../types";
 import { FitnessDetail, Workout, WorkoutDetail } from "../models";
 import { Types } from "mongoose";
@@ -8,7 +12,7 @@ class WorkoutRepository {
   // 운동일지 아이디를 이용한 운동일지 조회
   async getWorkoutById(workoutId: Types.ObjectId) {
     try {
-      const workout = await Workout.findById({ _id: workoutId }).lean();
+      const workout = await aggregateWorkoutById(workoutId);
 
       return workout;
     } catch (error) {
@@ -19,46 +23,7 @@ class WorkoutRepository {
   // 사용자 운동일지 조회
   async getWoroutListByUserId(userId: Types.ObjectId) {
     try {
-      const workouts = await Workout.aggregate([
-        // 1. 사용자 필터
-        { $match: { userId } },
-
-        // 2. WorkoutDetail 조인
-        {
-          $lookup: {
-            from: "workoutdetails", // 실제 컬렉션 이름 (모델명 X)
-            localField: "details",
-            foreignField: "_id",
-            as: "details",
-          },
-        },
-
-        // 3. 정렬 (원하는 기준)
-        { $sort: { createdAt: -1 } },
-
-        // 4. 필요한 필드만 선택
-        {
-          $project: {
-            _id: 1,
-            userId: 1,
-            createdAt: 1,
-            details: {
-              _id: 1,
-              workout_name: 1,
-              duration: 1,
-              calories: 1,
-              feedback: 1,
-              body_part: 1,
-              fitness_type: 1,
-              sets: 1,
-              reps: 1,
-              weight: 1,
-              avg_pace: 1,
-              distance: 1,
-            },
-          },
-        },
-      ]);
+      const workouts = await aggregateWorkoutsByUserId(userId);
 
       return workouts;
     } catch (error) {

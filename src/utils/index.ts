@@ -3,3 +3,4 @@ export * from "./authLogout";
 export * from "./mongoDBErrorHandler";
 export * from "./passwordUtils";
 export * from "./s3";
+export * from "./aggregates";

@@ -23,19 +23,7 @@ class WorkoutService {
         throw new NotFoundError("운동일지 조회 실패");
       }
 
-      const detailIds: Types.ObjectId[] = workout.details;
-
-      const details =
-        detailIds.length > 0
-          ? await Promise.all(
-              detailIds.map((detailId) => this.getWorkoutDetailById(detailId))
-            )
-          : [];
-
-      return {
-        ...workout,
-        details,
-      };
+      return workout;
     } catch (error) {
       throw error;
     }
