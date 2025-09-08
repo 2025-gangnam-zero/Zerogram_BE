@@ -94,6 +94,7 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   const sessionId = req.sessionId;
   try {
+
     // 사용자 세션 생성
     await userSessionService.deleteUserSessionById(sessionId);
 
