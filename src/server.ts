@@ -17,7 +17,7 @@ dotenv.config({
 
 const app = express();
 
-const server = http.createServer();
+const server = http.createServer(app);
 
 // swagger ui 연결
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
