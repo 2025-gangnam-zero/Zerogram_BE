@@ -311,6 +311,38 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": ["User"],
+        "summary": "내 계정 삭제",
+        "operationId": "deleteMyUser",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "사용자 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteUserResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "사용자 삭제 실패(내부 서버 오류)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
       }
     }
   },
@@ -490,6 +522,15 @@
           "success": { "type": "boolean", "example": true },
           "message": { "type": "string", "example": "사용자 정보 수정" },
           "code": { "type": "string", "example": "USER_UPDATE_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DeleteUserResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "사용자 삭제 성공" },
+          "code": { "type": "string", "example": "USER_DELETION_SUCCEEDED" },
           "timestamp": { "type": "string", "format": "date-time" }
         }
       }
