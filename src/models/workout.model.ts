@@ -1,5 +1,33 @@
 import mongoose, { Schema } from "mongoose";
-import { WorkoutDetailState, WorkoutState } from "../types";
+import { FitnessDetailState, WorkoutDetailState, WorkoutState } from "../types";
+
+const FitnessDetailSchema = new mongoose.Schema<FitnessDetailState>({
+  workoutDetailId: {
+    type: Schema.Types.ObjectId,
+    ref: "WorkoutDetail",
+    required: true,
+  },
+  body_part: {
+    type: String,
+  },
+  fitness_type: {
+    type: String,
+  },
+  sets: {
+    type: Number,
+  },
+  reps: {
+    type: Number,
+  },
+  weight: {
+    type: Number,
+  },
+});
+
+export const FitnessDetail = mongoose.model(
+  "FitnessDetail",
+  FitnessDetailSchema
+);
 
 const WorkoutDetailSchema = new mongoose.Schema<WorkoutDetailState>(
   {
@@ -24,32 +52,9 @@ const WorkoutDetailSchema = new mongoose.Schema<WorkoutDetailState>(
     feedback: {
       type: String,
     },
-    body_part: {
-      type: String,
-      required: function () {
-        return this.workout_name === "fitness";
-      },
-    },
-    fitness_type: {
-      type: String,
-      required: function () {
-        return this.workout_name === "fitness";
-      },
-    },
-    sets: {
-      type: Number,
-      required: function () {
-        return this.workout_name === "fitness";
-      },
-    },
-    reps: {
-      type: Number,
-      required: function () {
-        return this.workout_name === "fitness";
-      },
-    },
-    weight: {
-      type: Number,
+    fitnessDetails: {
+      type: [Schema.Types.ObjectId],
+      ref: "FitnessDetail",
     },
     avg_pace: {
       type: Number,

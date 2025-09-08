@@ -1,11 +1,8 @@
 import { mongoDBErrorHandler } from "../utils";
-import {
-  WorkoutDetailCreateDto,
-  WorkoutDetailState,
-  WorkoutState,
-} from "../types";
-import { Workout, WorkoutDetail } from "../models";
+import { WorkoutDetailState, WorkoutState } from "../types";
+import { FitnessDetail, Workout, WorkoutDetail } from "../models";
 import { Types } from "mongoose";
+import { FitnessDetailCreateDto, WorkoutDetailCreateDto } from "../dtos";
 
 class WorkoutRepository {
   // 운동일지 아이디를 이용한 운동일지 조회
@@ -66,6 +63,17 @@ class WorkoutRepository {
       return workouts;
     } catch (error) {
       throw mongoDBErrorHandler("getWorkoutListByUserId", error);
+    }
+  }
+
+  // 피트니스 상세 생성
+  async createFitnessDetail(fitness: FitnessDetailCreateDto) {
+    try {
+      const newFitness = FitnessDetail.create(fitness);
+
+      return newFitness;
+    } catch (error) {
+      throw mongoDBErrorHandler("createFitnessDetail", error);
     }
   }
 

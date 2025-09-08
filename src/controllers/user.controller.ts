@@ -8,14 +8,12 @@ import {
   userSessionService,
   workoutService,
 } from "../services";
-import {
-  MealState,
-  UserUpdateDto,
-  UserUpdateResponseDto,
-  WorkoutCreateDto,
-  WorkoutDetailCreateDto,
-} from "../types";
+import { MealState, UserUpdateDto, UserUpdateResponseDto } from "../types";
 import { deleteImage } from "../utils";
+import {
+  WorkoutCreateDto,
+  WorkoutDetailAndFitnessDetailCreateDto,
+} from "../dtos";
 
 // 사용자 조회
 export const getUserInfo = async (req: Request, res: Response) => {
@@ -137,6 +135,8 @@ export const createWorkout = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { details } = req.body;
 
+  console.log(details);
+
   if (!details) {
     throw new BadRequestError("details 필수");
   }
@@ -182,16 +182,20 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
     const workoutId = new mongoose.Types.ObjectId(workoutid);
 
     // 운동일지 상세
-    const newDetails: WorkoutDetailCreateDto[] = details.map((detail: any) => ({
-      ...detail,
-      workoutId,
-      userId,
-    }));
-
-    const workout = await workoutService.createNewWorkoutDetailsAndAddToWorkout(
-      workoutId,
-      newDetails
+    const newDetails: WorkoutDetailAndFitnessDetailCreateDto[] = details.map(
+      (detail: any) => ({
+        ...detail,
+        workoutId,
+        userId,
+      })
     );
+
+    console.log(newDetails);
+
+    // const workout = await workoutService.createNewWorkoutDetailsAndAddToWorkout(
+    //   workoutId,
+    //   newDetails
+    // );
 
     res.status(200).json({
       success: true,
@@ -199,7 +203,7 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
       code: "WORKOUT_DETAIL_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        workout,
+        // workout,
       },
     });
   } catch (error) {
