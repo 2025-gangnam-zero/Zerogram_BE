@@ -150,6 +150,32 @@ class WorkoutService {
     }
   }
 
+  // 운동일지 상세 생성 및 운동일지에 상세 추가
+  async creatWorkoutDetailsAndAddToWorkout(
+    workoutId: Types.ObjectId,
+    workoutDetails: WorkoutDetailAndFitnessDetailCreateDto[]
+  ) {
+    try {
+      // 운동일지 상세 생성
+      const newDetails = (await Promise.all(
+        workoutDetails.map((detail) =>
+          this.createFitnessDetailAndWorkoutDetail({
+            ...detail,
+            workoutId,
+          })
+        )
+      )) as any[];
+
+      const detailIds = newDetails.map((d) => d._id);
+
+      const updatedWorkout = await this.addWorkoutDetails(workoutId, detailIds);
+
+      return updatedWorkout;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // 운동일지 및 운동일지 상세 생성
   async createWorkoutAndDetail(workout: WorkoutCreateDto) {
     const session = await mongoose.startSession();
@@ -160,20 +186,9 @@ class WorkoutService {
       const newWorkout = await this.createWorkout(userId, date);
 
       // 운동일지 상세 생성
-      const newDetails = (await Promise.all(
-        details.map((detail) =>
-          this.createFitnessDetailAndWorkoutDetail({
-            ...detail,
-            workoutId: newWorkout._id,
-          })
-        )
-      )) as any[];
-
-      const detailIds = newDetails.map((d) => d._id);
-
-      const updatedWorkout = await this.addWorkoutDetails(
+      const updatedWorkout = await this.creatWorkoutDetailsAndAddToWorkout(
         newWorkout._id,
-        detailIds
+        details
       );
 
       await session.commitTransaction();

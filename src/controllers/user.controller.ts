@@ -207,10 +207,10 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
 
     console.log(newDetails);
 
-    // const workout = await workoutService.createNewWorkoutDetailsAndAddToWorkout(
-    //   workoutId,
-    //   newDetails
-    // );
+    const workout = await workoutService.creatWorkoutDetailsAndAddToWorkout(
+      workoutId,
+      newDetails
+    );
 
     res.status(200).json({
       success: true,
@@ -218,7 +218,7 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
       code: "WORKOUT_DETAIL_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        // workout,
+        workout,
       },
     });
   } catch (error) {
