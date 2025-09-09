@@ -30,9 +30,17 @@ class WorkoutService {
   }
 
   // 사용자 아이디를 이용한 운동일지 목록 조회
-  async getWoroutListByUserId(userId: Types.ObjectId) {
+  async getWoroutListByUserId(
+    userId: Types.ObjectId,
+    year: number,
+    month: number
+  ) {
     try {
-      const workouts = await workoutRepository.getWoroutListByUserId(userId);
+      const workouts = await workoutRepository.getWoroutListByUserId(
+        userId,
+        year,
+        month
+      );
 
       return workouts;
     } catch (error) {
@@ -69,9 +77,9 @@ class WorkoutService {
   }
 
   // 운동일지 생성
-  async createWorkout(userId: Types.ObjectId) {
+  async createWorkout(userId: Types.ObjectId, date: string) {
     try {
-      const workout = await workoutRepository.createWorkout(userId);
+      const workout = await workoutRepository.createWorkout(userId, date);
 
       if (!workout) {
         throw new InternalServerError("운동일지 생성 실패");
@@ -121,25 +129,55 @@ class WorkoutService {
     }
   }
 
+  // 운동일지에 운동 상세 추가
+  async addWorkoutDetails(
+    workoutId: Types.ObjectId,
+    workoutDetailIds: Types.ObjectId[]
+  ) {
+    try {
+      const workout = await workoutRepository.addWorkoutDetails(
+        workoutId,
+        workoutDetailIds
+      );
+
+      if (!workout) {
+        throw new InternalServerError("운동일지 상세 추가 실패");
+      }
+
+      return workout;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // 운동일지 및 운동일지 상세 생성
   async createWorkoutAndDetail(workout: WorkoutCreateDto) {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-      const { userId, details } = workout;
-      const newWorkout = await workoutRepository.createWorkout(userId);
+      const { userId, date, details } = workout;
+      // 운동일지 생성
+      const newWorkout = await this.createWorkout(userId, date);
 
-      const newDetails = await Promise.all(
+      // 운동일지 상세 생성
+      const newDetails = (await Promise.all(
         details.map((detail) =>
           this.createFitnessDetailAndWorkoutDetail({
             ...detail,
             workoutId: newWorkout._id,
           })
         )
+      )) as any[];
+
+      const detailIds = newDetails.map((d) => d._id);
+
+      const updatedWorkout = await this.addWorkoutDetails(
+        newWorkout._id,
+        detailIds
       );
 
       await session.commitTransaction();
-      return newDetails;
+      return updatedWorkout;
     } catch (error) {
       session.abortTransaction();
       throw error;

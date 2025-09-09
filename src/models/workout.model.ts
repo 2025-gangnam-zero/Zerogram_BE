@@ -1,28 +1,29 @@
 import mongoose, { Schema } from "mongoose";
 import { FitnessDetailState, WorkoutDetailState, WorkoutState } from "../types";
 
-const FitnessDetailSchema = new mongoose.Schema<FitnessDetailState>({
-  workoutDetailId: {
-    type: Schema.Types.ObjectId,
-    ref: "WorkoutDetail",
-    required: true,
+const FitnessDetailSchema = new mongoose.Schema<FitnessDetailState>(
+  {
+    body_part: {
+      type: String,
+    },
+    fitness_type: {
+      type: String,
+    },
+    sets: {
+      type: Number,
+    },
+    reps: {
+      type: Number,
+    },
+    weight: {
+      type: Number,
+    },
   },
-  body_part: {
-    type: String,
-  },
-  fitness_type: {
-    type: String,
-  },
-  sets: {
-    type: Number,
-  },
-  reps: {
-    type: Number,
-  },
-  weight: {
-    type: Number,
-  },
-});
+  {
+    versionKey: false,
+    timestamps: true,
+  }
+);
 
 export const FitnessDetail = mongoose.model(
   "FitnessDetail",
@@ -85,6 +86,10 @@ const WorkoutSchema = new mongoose.Schema<WorkoutState>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+    },
+    date: {
+      type: String,
       required: true,
     },
     details: {

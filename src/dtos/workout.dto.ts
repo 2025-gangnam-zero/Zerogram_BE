@@ -1,8 +1,12 @@
 import { Types } from "mongoose";
-import { WorkoutType } from "types";
+import {
+  FitnessDetailState,
+  WorkoutDetailState,
+  WorkoutState,
+  WorkoutType,
+} from "types";
 
 export interface FitnessDetailCreateDto {
-  workoutDetail: Types.ObjectId;
   body_part: string;
   fitness_type: string;
   sets: number;
@@ -42,5 +46,20 @@ export interface WorkoutDetailAndFitnessDetailCreateDto {
 
 export interface WorkoutCreateDto {
   userId: Types.ObjectId;
+  date: string;
   details: WorkoutDetailAndFitnessDetailCreateDto[];
+}
+
+/** FitnessDetail 응답 DTO (State와 동일 구조) */
+export interface FitnessDetailDto extends FitnessDetailState {}
+
+/** WorkoutDetail 응답 DTO: fitnessDetails를 문서 배열로 확장 */
+export interface WorkoutDetailDto
+  extends Omit<WorkoutDetailState, "fitnessDetails"> {
+  fitnessDetails: FitnessDetailDto[];
+}
+
+/** 최종 응답 DTO: details를 ObjectId[] → WorkoutDetailDto[] 로 확장 */
+export interface WorkoutResponseDto extends Omit<WorkoutState, "details"> {
+  details: WorkoutDetailDto[];
 }

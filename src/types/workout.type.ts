@@ -5,6 +5,7 @@ export type WorkoutType = "running" | "fitness";
 export interface WorkoutState {
   // 공통
   _id: Types.ObjectId;
+  date: string;
   userId: Types.ObjectId;
   createdAt: Date; // 생성 시각
   updatedAt: Date; // 수정 시각
@@ -31,7 +32,7 @@ export interface WorkoutDetailState {
 
 export interface FitnessDetailState {
   _id: Types.ObjectId;
-  workoutDetailId: Types.ObjectId;
+  // workoutDetailId: Types.ObjectId;
   body_part?: string; // 부위
   fitness_type?: string; // 종목
   sets?: number; // 세트 수

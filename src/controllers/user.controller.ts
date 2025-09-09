@@ -113,8 +113,19 @@ export const deleteMe = async (req: Request, res: Response) => {
 // 운동 일지 목록 조회
 export const getWorkoutListById = async (req: Request, res: Response) => {
   const user = req.user;
+  const { year, month } = req.query;
+  if (!year) {
+    throw new BadRequestError("요청하는 연도 필수");
+  }
+  if (!month) {
+    throw new BadRequestError("요청하는 연도 필수");
+  }
   try {
-    const workouts = await workoutService.getWoroutListByUserId(user._id);
+    const workouts = await workoutService.getWoroutListByUserId(
+      user._id,
+      Number(year as string),
+      Number(month as string)
+    );
 
     res.status(200).json({
       success: true,
@@ -134,16 +145,20 @@ export const getWorkoutListById = async (req: Request, res: Response) => {
 export const createWorkout = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { details } = req.body;
-
-  console.log(details);
+  const { date } = req.query;
 
   if (!details) {
     throw new BadRequestError("details 필수");
   }
 
+  if (!date) {
+    throw new BadRequestError("날짜 필수");
+  }
+
   try {
     const workoutCreate = {
       userId,
+      date: date as String,
       details: details,
     } as WorkoutCreateDto;
 

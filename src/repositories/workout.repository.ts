@@ -1,18 +1,24 @@
 import {
-  aggregateWorkoutById,
-  aggregateWorkoutsByUserId,
+  aggregateGetWorkoutById,
+  aggregateGetWorkoutsByUserIdForMonth,
   mongoDBErrorHandler,
 } from "../utils";
 import { WorkoutDetailState, WorkoutState } from "../types";
 import { FitnessDetail, Workout, WorkoutDetail } from "../models";
 import { Types } from "mongoose";
-import { FitnessDetailCreateDto, WorkoutDetailCreateDto } from "../dtos";
+import {
+  FitnessDetailCreateDto,
+  WorkoutDetailCreateDto,
+  WorkoutResponseDto,
+} from "../dtos";
 
 class WorkoutRepository {
   // 운동일지 아이디를 이용한 운동일지 조회
-  async getWorkoutById(workoutId: Types.ObjectId) {
+  async getWorkoutById(
+    workoutId: Types.ObjectId
+  ): Promise<WorkoutResponseDto | null> {
     try {
-      const workout = await aggregateWorkoutById(workoutId);
+      const workout = await aggregateGetWorkoutById(workoutId);
 
       return workout;
     } catch (error) {
@@ -21,9 +27,17 @@ class WorkoutRepository {
   }
 
   // 사용자 운동일지 조회
-  async getWoroutListByUserId(userId: Types.ObjectId) {
+  async getWoroutListByUserId(
+    userId: Types.ObjectId,
+    year: number,
+    month: number
+  ) {
     try {
-      const workouts = await aggregateWorkoutsByUserId(userId);
+      const workouts = await aggregateGetWorkoutsByUserIdForMonth(
+        userId,
+        year,
+        month
+      );
 
       return workouts;
     } catch (error) {
@@ -43,9 +57,12 @@ class WorkoutRepository {
   }
 
   // 운동일지 생성
-  async createWorkout(userId: Types.ObjectId): Promise<WorkoutState> {
+  async createWorkout(
+    userId: Types.ObjectId,
+    date: string
+  ): Promise<WorkoutState> {
     try {
-      const newWorkout = await Workout.create({ userId });
+      const newWorkout = await Workout.create({ userId, date });
 
       return newWorkout;
     } catch (error) {
@@ -98,6 +115,30 @@ class WorkoutRepository {
       return workoutDetail;
     } catch (error) {
       throw mongoDBErrorHandler("getWorkoutDetailById", error);
+    }
+  }
+
+  // 운동일지에 운동일지 상세 추가
+  async addWorkoutDetails(
+    workoutId: Types.ObjectId,
+    detailIds: Types.ObjectId[]
+  ) {
+    try {
+      const workout = Workout.findOneAndUpdate(
+        { _id: workoutId },
+        {
+          $addToSet: {
+            details: detailIds,
+          },
+        },
+        {
+          new: true,
+        }
+      );
+
+      return workout;
+    } catch (error) {
+      throw mongoDBErrorHandler("", error);
     }
   }
 
