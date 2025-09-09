@@ -63,17 +63,17 @@ class UserSessionService {
 
   // 사용자 세션 생성
   async createUserSession(
-    _id: Types.ObjectId,
+    userId: Types.ObjectId,
     login_type: LoginType
   ): Promise<UserSessionState> {
     try {
       // 액세스 토큰 생성
-      const access_token = await jwtSign({ _id }, ACCESS_TOKEN_EXPIRESIN);
+      const access_token = await jwtSign({ userId }, ACCESS_TOKEN_EXPIRESIN);
       // 리프레시 토큰 생성
-      const refresh_token = await jwtSign({ _id }, REFRESH_TOKEN_EXPIRESIN);
+      const refresh_token = await jwtSign({ userId }, REFRESH_TOKEN_EXPIRESIN);
 
       const newUserSession = {
-        userId: _id,
+        userId,
         access_token,
         refresh_token,
         login_type,

@@ -10,13 +10,13 @@ export const authChecker = async (
   next: NextFunction
 ) => {
   const sessionid = req.headers["x-session-id"] as string;
-  const sessionId = new mongoose.Types.ObjectId(sessionid);
 
   // 세션 아이디가 없으면 로그아웃
-  if (!sessionid) {
+  if (!sessionid || !mongoose.Types.ObjectId.isValid(sessionid)) {
     authLogout(res, "세션 아이디가 존재하지 않음");
     return;
   }
+  const sessionId = new mongoose.Types.ObjectId(sessionid);
 
   try {
     // 사용자 세션 확인
@@ -41,13 +41,22 @@ export const authChecker = async (
       // 엑세스 토큰이 유효하지 않는 경우
       try {
         // 리프레시 토큰 유효성 확인
-        const { _id } = await jwtVerify(refresh_token);
+        const { userId: refreshUserId } = await jwtVerify(refresh_token);
+
+        // 토큰-세션 사용자 일치 검증(보안)
+        if (String(refreshUserId) !== String(userId)) {
+          authLogout(res, "토큰과 세션 정보가 일치하지 않습니다.", sessionId);
+          return;
+        }
 
         // 액세스 토큰 재발급
-        const access_token = await jwtSign({ _id }, ACCESS_TOKEN_EXPIRESIN);
+        const access_token = await jwtSign(
+          { refreshUserId },
+          ACCESS_TOKEN_EXPIRESIN
+        );
 
         // 재발급된 액세스 토큰 업데이트
-        await userSessionService.updateAccessToken(_id, access_token);
+        await userSessionService.updateAccessToken(refreshUserId, access_token);
 
         res.status(200).json({
           success: true,
