@@ -226,6 +226,44 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
   }
 };
 
+export const addFitnessDetail = async (req: Request, res: Response) => {
+  const { workoutid, detailid } = req.params;
+  const { fitnessDetails } = req.body;
+
+  console.log("전달받은 fitnessDetails", fitnessDetails);
+
+  if (!workoutid) {
+    throw new BadRequestError("운동일지 아이디 필수");
+  }
+
+  if (!detailid) {
+    throw new BadRequestError("운동일지 상세 아이디 필수");
+  }
+  try {
+    const detailId = new mongoose.Types.ObjectId(detailid);
+
+    const workoutDetail =
+      await workoutService.createFitnessDetailAndAddToWorkoutDetail(
+        detailId,
+        fitnessDetails
+      );
+
+    console.log("생성된 workoutDetails", workoutDetail);
+
+    res.status(200).json({
+      success: true,
+      message: "피트니스 상세 생성 성공",
+      code: "FITNESS_DETAIL_CREATION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workoutDetail,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 // 운동 일지 조회
 export const getWorkoutById = async (req: Request, res: Response) => {
   const user = req.user;
@@ -252,31 +290,6 @@ export const getWorkoutById = async (req: Request, res: Response) => {
       date: {
         workout,
       },
-    });
-  } catch (error) {
-    throw error;
-  }
-};
-
-// 운동 일지 삭제
-export const deleteWorkoutById = async (req: Request, res: Response) => {
-  const user = req.user;
-  const { workoutid } = req.params;
-
-  if (!workoutid) {
-    throw new BadRequestError("운동일지 아이디 필수");
-  }
-
-  try {
-    const workoutId = new mongoose.Types.ObjectId(workoutid);
-
-    await workoutService.deleteWorkoutById(workoutId, user._id);
-
-    res.status(200).json({
-      success: true,
-      message: "운동일지 삭제 성공",
-      code: "WORKOUT_DELETION_SUCCEEDED",
-      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     throw error;
@@ -315,6 +328,7 @@ export const getWorkoutDetail = async (req: Request, res: Response) => {
     throw error;
   }
 };
+
 // 운동일지 상세 수정
 export const updateWorkoutDetail = async (req: Request, res: Response) => {
   const userId = req.user._id;
@@ -346,9 +360,61 @@ export const updateWorkoutDetail = async (req: Request, res: Response) => {
   }
 };
 
+// 피트니스 상세 수정
+export const updateFitnessDetail = async (req: Request, res: Response) => {
+  const { fitnessid } = req.params;
+  const { fitnessDetail } = req.body;
+  try {
+    const fitnessDetailId = new mongoose.Types.ObjectId(fitnessid);
+
+    console.log(fitnessDetail, fitnessDetailId);
+
+    res.status(200).json({
+      success: true,
+      message: "운동 루틴 수정 수정",
+      code: " ",
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 운동 일지 삭제
+export const deleteWorkoutById = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { workoutid } = req.params;
+
+  if (!workoutid) {
+    throw new BadRequestError("운동일지 아이디 필수");
+  }
+
+  try {
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+
+    await workoutService.deleteWorkoutById(workoutId, user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 삭제 성공",
+      code: "WORKOUT_DELETION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 // 운동일지 상세 삭제
 export const deleteWorkoutDetail = async (req: Request, res: Response) => {
+  const { detailid } = req.params;
+  if (!detailid) {
+    throw new BadRequestError("운동일지 상세 아이디 필수");
+  }
   try {
+    const workoutDetailId = new mongoose.Types.ObjectId(detailid);
+
+    await workoutService.deleteWorkoutDetailById(workoutDetailId);
+
     res.status(200).json({
       success: true,
       message: "운동일지 상세 조회",
@@ -358,6 +424,38 @@ export const deleteWorkoutDetail = async (req: Request, res: Response) => {
     throw error;
   }
 };
+
+// 피트니스 상세 삭제
+export const deleteFitnessDetail = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+
+  const { fitnessdetailid } = req.params;
+
+  console.log(fitnessdetailid);
+
+  if (!userId) {
+    throw new BadRequestError("사용자 아이디 필수");
+  }
+  if (!fitnessdetailid) {
+    throw new BadRequestError("피트니스 아이디 필수");
+  }
+  try {
+    const fitnessDetailId = new mongoose.Types.ObjectId(fitnessdetailid);
+
+    await workoutService.deleteFitnessDetailById(fitnessDetailId);
+
+    res.status(200).json({
+      success: true,
+      message: "피트니스 삭제 성공",
+      code: "FITNESS_DELETION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// -----------------------------------------------------------------------------------------------
 
 // 사용자의 일일 식단 목록
 export const getDietListById = async (req: Request, res: Response) => {

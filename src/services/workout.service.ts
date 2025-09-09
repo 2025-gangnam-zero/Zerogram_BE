@@ -12,6 +12,7 @@ import {
   WorkoutDetailAndFitnessDetailCreateDto,
   WorkoutDetailCreateDto,
 } from "../dtos";
+import { FitnessDetailState } from "types";
 
 class WorkoutService {
   // workoutId를 이용한 운동일지 조회
@@ -86,6 +87,59 @@ class WorkoutService {
       }
 
       return workout;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 피트니스 상세를 운동 상세에 추가
+  async addFitnessDetails(
+    workoutDetailId: Types.ObjectId,
+    fitnessDetailIds: Types.ObjectId[]
+  ) {
+    try {
+      const workoutDetail = await workoutRepository.addFitnessDetails(
+        workoutDetailId,
+        fitnessDetailIds
+      );
+
+      if (!workoutDetail) {
+        throw new InternalServerError("피트니스 상세 추가 실패");
+      }
+
+      return workoutDetail;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 피트니스 상세 생성 및 운동일지 상세 추가
+  async createFitnessDetailAndAddToWorkoutDetail(
+    workoutDetailId: Types.ObjectId,
+    fitnessDetails: FitnessDetailCreateDto[]
+  ) {
+    try {
+      // 피트니스 상세 생성
+      const newFitnessDetails: FitnessDetailState[] = await Promise.all(
+        fitnessDetails.map((d) => this.createFitnessDetail(d))
+      );
+
+      console.log("추가된 피트니스 배열", newFitnessDetails);
+
+      const fitnessDetailIds = newFitnessDetails.map((d) => d._id);
+
+      console.log("피트니스 아이디 배열", fitnessDetailIds);
+
+      // 운동 상세에 피트니스 상세 추가
+      const workoutDetail = await this.addFitnessDetails(
+        workoutDetailId,
+        fitnessDetailIds
+      );
+
+      return {
+        ...workoutDetail,
+        fitnessDetails: newFitnessDetails,
+      };
     } catch (error) {
       throw error;
     }
@@ -235,6 +289,36 @@ class WorkoutService {
       }
 
       const result = await workoutRepository.deleteWorkout(workoutId);
+
+      if (!result.acknowledged || result.deletedCount === 0) {
+        throw new InternalServerError("운동일지 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 운동일지 상세 삭제
+  async deleteWorkoutDetailById(workoutDetailId: Types.ObjectId) {
+    try {
+      const result = await workoutRepository.deleteWorkoutDetail(
+        workoutDetailId
+      );
+
+      if (!result.acknowledged || result.deletedCount === 0) {
+        throw new InternalServerError("운동일지 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 피트니스 상세 삭제
+  async deleteFitnessDetailById(fitnessDetailId: Types.ObjectId) {
+    try {
+      const result = await workoutRepository.deleteFitnessDetail(
+        fitnessDetailId
+      );
 
       if (!result.acknowledged || result.deletedCount === 0) {
         throw new InternalServerError("운동일지 삭제 실패");

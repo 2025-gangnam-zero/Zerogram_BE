@@ -16,6 +16,9 @@ import {
   getWorkoutDetail,
   updateWorkoutDetail,
   deleteWorkoutDetail,
+  deleteFitnessDetail,
+  addFitnessDetail,
+  updateFitnessDetail,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -38,37 +41,60 @@ export default () => {
   router.post("/users/me/workouts", authChecker, createWorkout);
   // 운동일지 조회
   router.get("/users/me/workouts/:workoutid", authChecker, getWorkoutById);
+
   // 운동일지 상세 생성
   router.post(
     "/users/me/workouts/:workoutid",
     authChecker,
     createWorkoutDetail
   );
+
+  // 운동일지 피트니스 상세 생성
+  router.post(
+    "/users/me/workouts/:workoutid/details/:detailid",
+    addFitnessDetail
+  );
+
   // 운동일지 삭제
   router.delete(
     "/users/me/workouts/:workoutid",
     authChecker,
     deleteWorkoutById
   );
-  // --------------------------------------------------------------------------
+
   // 운동일지 상세 조회
   router.get(
-    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    "/users/me/workouts/:workoutid/details/:workoutdetailid",
     authChecker,
     getWorkoutDetail
   );
+
   // 운동일지 상세 수정
   router.patch(
-    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    "/users/me/workouts/:workoutid/details/:workoutdetailid",
     authChecker,
     updateWorkoutDetail
   );
+
+  // 피트니스 상세 수정
+  router.patch(
+    "/users/me/workouts/:workoutid/details/detailid/fitnessdetails/fitnessid",
+    updateFitnessDetail
+  );
+
   // 운동일지 상세 삭제
   router.delete(
-    "/users/me/workouts/:workoutid/detail/:workoutdetailid",
+    "/users/me/details/:detailid",
     authChecker,
     deleteWorkoutDetail
   );
+  // 운동일지 피트니스 상세 삭제
+  router.delete(
+    "/users/me/fitnessdetails/:fitnessdetailid",
+    authChecker,
+    deleteFitnessDetail
+  );
+
   // --------------------------------------------------------------------------
   router.get("/users/me/diets", authChecker, getDietById);
   router.post("/users/me/diets", authChecker, createDiet);
