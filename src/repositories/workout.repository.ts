@@ -8,8 +8,11 @@ import { FitnessDetail, Workout, WorkoutDetail } from "../models";
 import { DeleteResult, Types } from "mongoose";
 import {
   FitnessDetailCreateDto,
+  FitnessDetailUpdateRequestDto,
   WorkoutDetailCreateDto,
+  WorkoutDetailUpdateRequestDto,
   WorkoutResponseDto,
+  WorkoutUpdateRequestDto,
 } from "../dtos";
 
 class WorkoutRepository {
@@ -162,29 +165,6 @@ class WorkoutRepository {
     }
   }
 
-  // 운동일지 상셍 수정
-  async updateWorkoutDetail(workoutDetail: WorkoutDetailState) {
-    try {
-      const detail = await Workout.findOneAndUpdate(
-        {
-          _id: workoutDetail._id,
-        },
-        {
-          $set: {
-            ...workoutDetail,
-          },
-        },
-        {
-          new: true,
-        }
-      );
-
-      return detail;
-    } catch (error) {
-      throw mongoDBErrorHandler("updateWorkoutDetail", error);
-    }
-  }
-
   // 운동일지 삭제
   async deleteWorkout(workoutId: Types.ObjectId) {
     try {
@@ -219,6 +199,85 @@ class WorkoutRepository {
       return result;
     } catch (error) {
       throw mongoDBErrorHandler("deleteFitnessDetail", error);
+    }
+  }
+
+  // 운동 일지 수정
+  async updateWorkout(
+    workoutId: Types.ObjectId,
+    updatedWorkout: WorkoutUpdateRequestDto
+  ) {
+    try {
+      const workout = await Workout.findOneAndUpdate(
+        { _id: workoutId },
+        {
+          $set: updatedWorkout,
+        },
+        {
+          new: true,
+          upsert: false,
+          lean: true,
+          omitUndefined: true,
+        }
+      );
+
+      return workout;
+    } catch (error) {
+      throw mongoDBErrorHandler("updateWorkout", error);
+    }
+  }
+
+  // 운동일지 상세 수정
+  async updateWorkoutDetail(
+    workoutDetailId: Types.ObjectId,
+    workoutDetail: WorkoutDetailUpdateRequestDto
+  ) {
+    try {
+      const detail = await WorkoutDetail.findOneAndUpdate(
+        {
+          _id: workoutDetailId,
+        },
+        {
+          $set: workoutDetail,
+        },
+        {
+          new: true,
+          upsert: false,
+          lean: true,
+          omitUndefined: true,
+        }
+      );
+
+      return detail;
+    } catch (error) {
+      throw mongoDBErrorHandler("updateWorkoutDetail", error);
+    }
+  }
+
+  // 피트니스 상세 수정
+  async updateFitnessDetail(
+    fitnessDetailId: Types.ObjectId,
+    updatedFitness: FitnessDetailUpdateRequestDto
+  ) {
+    try {
+      const fitnessDetail = await FitnessDetail.findOneAndUpdate(
+        {
+          _id: fitnessDetailId,
+        },
+        {
+          $set: updatedFitness,
+        },
+        {
+          new: true,
+          upsert: false,
+          lean: true,
+          omitUndefined: true,
+        }
+      );
+
+      return fitnessDetail;
+    } catch (error) {
+      throw mongoDBErrorHandler("updateFitnessDetail", error);
     }
   }
 }

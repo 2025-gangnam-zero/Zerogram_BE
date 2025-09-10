@@ -127,6 +127,8 @@ export const getWorkoutListById = async (req: Request, res: Response) => {
       Number(month as string)
     );
 
+    console.log(workouts.map((d) => d.details));
+
     res.status(200).json({
       success: true,
       message: "사용자 운동일지 목록 조회 성공",
@@ -226,11 +228,10 @@ export const createWorkoutDetail = async (req: Request, res: Response) => {
   }
 };
 
+// 피트니스 상세 추가하기
 export const addFitnessDetail = async (req: Request, res: Response) => {
   const { workoutid, detailid } = req.params;
   const { fitnessDetails } = req.body;
-
-  console.log("전달받은 fitnessDetails", fitnessDetails);
 
   if (!workoutid) {
     throw new BadRequestError("운동일지 아이디 필수");
@@ -329,31 +330,70 @@ export const getWorkoutDetail = async (req: Request, res: Response) => {
   }
 };
 
-// 운동일지 상세 수정
-export const updateWorkoutDetail = async (req: Request, res: Response) => {
-  const userId = req.user._id;
-  const { workoutid, workoutdetailid } = req.params;
-  const { detail } = req.body;
-
+// 운동일지 수정
+export const updateWorkout = async (req: Request, res: Response) => {
+  const { workoutid } = req.params;
+  const { workout: updatedWorkout } = req.body;
   if (!workoutid) {
     throw new BadRequestError("운동일지 아이디 필수");
   }
+
+  if (!Object.values(updatedWorkout ?? {}).some((v) => v !== undefined)) {
+    throw new BadRequestError("변경할 필드가 최소 1개 이상 필수");
+  }
+
+  console.log(updatedWorkout);
+
+  try {
+    const workoutId = new mongoose.Types.ObjectId(workoutid);
+    const workout = await workoutService.updateWorkout(
+      workoutId,
+      updatedWorkout
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "운동일지 수정 성공",
+      code: "UPDATE_WORKOUT_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        workout,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 운동일지 상세 수정
+export const updateWorkoutDetail = async (req: Request, res: Response) => {
+  const { workoutdetailid } = req.params;
+  const { detail: updatedDetail } = req.body;
+  console.log(updatedDetail);
 
   if (!workoutdetailid) {
     throw new BadRequestError("운동일지상세 아이디 필수");
   }
 
+  if (!Object.values(updatedDetail ?? {}).some((v) => v !== undefined)) {
+    throw new BadRequestError("변경할 필드가 최소 1개 이상 필수");
+  }
+
   try {
-    const workoutId = new mongoose.Types.ObjectId(workoutid);
     const workoutdetailId = new mongoose.Types.ObjectId(workoutdetailid);
 
-    console.log(userId, detail, workoutId, workoutdetailId);
+    const workoutDetail = await workoutService.updateWorkoutDetail(
+      workoutdetailId,
+      updatedDetail
+    );
 
     res.status(200).json({
       success: true,
       message: "운동일지 상세 조회",
       code: "UPDATE_WORKOUT_DETAIL_SUCCEEDED",
-      data: {},
+      data: {
+        detail: workoutDetail,
+      },
     });
   } catch (error) {
     throw error;
@@ -363,16 +403,35 @@ export const updateWorkoutDetail = async (req: Request, res: Response) => {
 // 피트니스 상세 수정
 export const updateFitnessDetail = async (req: Request, res: Response) => {
   const { fitnessid } = req.params;
-  const { fitnessDetail } = req.body;
+  const { fitnessDetail: updatedFitnessDetail } = req.body;
+
+  console.log(updatedFitnessDetail);
+  
+  if (!fitnessid) {
+    throw new BadRequestError("피트니스 상세 아이디 필수");
+  }
+
+  if (!Object.values(updatedFitnessDetail ?? {}).some((v) => v !== undefined)) {
+    throw new BadRequestError("변경할 필드가 최소 1개 이상 필수");
+  }
+
+
   try {
     const fitnessDetailId = new mongoose.Types.ObjectId(fitnessid);
 
-    console.log(fitnessDetail, fitnessDetailId);
+    const fitnessDetail = await workoutService.updateFitnessDetail(
+      fitnessDetailId,
+      updatedFitnessDetail
+    );
 
     res.status(200).json({
       success: true,
       message: "운동 루틴 수정 수정",
-      code: " ",
+      code: "UPDATE_FITNESS_DETAIL_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        fitnessDetail,
+      },
     });
   } catch (error) {
     throw error;
@@ -383,6 +442,8 @@ export const updateFitnessDetail = async (req: Request, res: Response) => {
 export const deleteWorkoutById = async (req: Request, res: Response) => {
   const user = req.user;
   const { workoutid } = req.params;
+
+  console.log(user._id);
 
   if (!workoutid) {
     throw new BadRequestError("운동일지 아이디 필수");

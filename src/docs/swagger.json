@@ -344,6 +344,140 @@
           }
         }
       }
+    },
+    "/users/me/workouts": {
+      "get": {
+        "tags": ["User"],
+        "summary": "내 운동일지 목록 조회 (연/월)",
+        "operationId": "getMyWorkoutList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1970,
+              "example": 2025
+            },
+            "description": "조회할 연도(예: 2025)"
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 12,
+              "example": 9
+            },
+            "description": "조회할 월(1–12)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "사용자 운동일지 목록 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetWorkoutListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(연/월 누락 또는 형식 에러)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["User"],
+        "summary": "내 운동일지 생성",
+        "operationId": "createMyWorkout",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-09-10"
+            },
+            "description": "운동일 날짜 (YYYY-MM-DD)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WorkoutCreateRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "운동일지 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateWorkoutResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(날짜/상세 누락 또는 형식 오류)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -381,6 +515,64 @@
           "updatedAt": { "type": "string", "format": "date-time" }
         },
         "required": ["email", "nickname"]
+      },
+      "_id": {
+        "type": "string",
+        "description": "MongoDB ObjectId",
+        "pattern": "^[a-fA-F0-9]{24}$",
+        "example": "6650f1abcdef1234567890"
+      },
+      "WorkoutType": {
+        "type": "string",
+        "enum": ["running", "fitness"]
+      },
+      "Workout": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "date": { "type": "string", "format": "date" },
+          "userId": { "$ref": "#/components/schemas/_id" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "details": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/_id" }
+          }
+        },
+        "required": ["date", "userId"]
+      },
+      "WorkoutDetail": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "workoutId": { "$ref": "#/components/schemas/_id" },
+          "workout_name": { "$ref": "#/components/schemas/WorkoutType" },
+          "duration": { "type": "number", "format": "float" },
+          "calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string", "nullable": true },
+          "fitnessDetails": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/_id" }
+          },
+          "avg_pace": { "type": "number", "format": "float", "nullable": true },
+          "distance": { "type": "number", "format": "float", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["workoutId", "workout_name", "duration", "calories"]
+      },
+      "FitnessDetail": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "body_part": { "type": "string", "nullable": true },
+          "fitness_type": { "type": "string", "nullable": true },
+          "sets": { "type": "integer", "nullable": true },
+          "reps": { "type": "integer", "nullable": true },
+          "weight": { "type": "number", "format": "float", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
       },
       "ErrorResponse": {
         "type": "object",
@@ -533,6 +725,167 @@
           "code": { "type": "string", "example": "USER_DELETION_SUCCEEDED" },
           "timestamp": { "type": "string", "format": "date-time" }
         }
+      },
+
+      "FitnessDetailDto": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "body_part": { "type": "string", "nullable": true },
+          "fitness_type": { "type": "string", "nullable": true },
+          "sets": { "type": "integer", "nullable": true },
+          "reps": { "type": "integer", "nullable": true },
+          "weight": { "type": "number", "format": "float", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+
+      "WorkoutDetailDto": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "workoutId": { "$ref": "#/components/schemas/_id" },
+          "workout_name": { "$ref": "#/components/schemas/WorkoutType" },
+          "duration": { "type": "number", "format": "float" },
+          "calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string", "nullable": true },
+          "avg_pace": { "type": "number", "format": "float", "nullable": true },
+          "distance": { "type": "number", "format": "float", "nullable": true },
+          "fitnessDetails": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FitnessDetailDto" }
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "workoutId",
+          "workout_name",
+          "duration",
+          "calories",
+          "fitnessDetails"
+        ]
+      },
+
+      "WorkoutResponseDto": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "date": { "type": "string", "format": "date" },
+          "userId": { "$ref": "#/components/schemas/_id" },
+          "details": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/WorkoutDetailDto" }
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["date", "userId", "details"]
+      },
+
+      "WorkoutUpdateRequestDto": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "format": "date" }
+        },
+        "additionalProperties": false
+      },
+
+      "WorkoutDetailUpdateRequestDto": {
+        "type": "object",
+        "properties": {
+          "duration": { "type": "number", "format": "float" },
+          "calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string" },
+          "avg_pace": { "type": "number", "format": "float" },
+          "distance": { "type": "number", "format": "float" }
+        },
+        "additionalProperties": false
+      },
+
+      "FitnessDetailUpdateRequestDto": {
+        "type": "object",
+        "properties": {
+          "body_part": { "type": "string" },
+          "fitness_type": { "type": "string" },
+          "sets": { "type": "integer" },
+          "reps": { "type": "integer" },
+          "weight": { "type": "number", "format": "float" }
+        },
+        "additionalProperties": false
+      },
+
+      "FitnessDetailCreateDto": {
+        "type": "object",
+        "properties": {
+          "body_part": { "type": "string" },
+          "fitness_type": { "type": "string" },
+          "sets": { "type": "integer" },
+          "reps": { "type": "integer" },
+          "weight": { "type": "number", "format": "float" }
+        },
+        "required": ["body_part", "fitness_type", "sets", "reps", "weight"]
+      },
+      "WorkoutDetailCreateDto": {
+        "type": "object",
+        "properties": {
+          "workoutId": { "$ref": "#/components/schemas/_id" },
+          "workout_name": { "$ref": "#/components/schemas/WorkoutType" },
+          "duration": { "type": "number", "format": "float" },
+          "calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string" },
+          "fitnessDetails": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/_id" }
+          },
+          "avg_pace": { "type": "number", "format": "float" },
+          "distance": { "type": "number", "format": "float" }
+        },
+        "required": [
+          "workoutId",
+          "workout_name",
+          "duration",
+          "calories",
+          "fitnessDetails"
+        ]
+      },
+      "WorkoutDetailAndFitnessDetailCreateDto": {
+        "type": "object",
+        "properties": {
+          "workoutId": { "$ref": "#/components/schemas/_id" },
+          "workout_name": { "$ref": "#/components/schemas/WorkoutType" },
+          "duration": { "type": "number", "format": "float" },
+          "calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string" },
+          "fitnessDetails": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FitnessDetailCreateDto" }
+          },
+          "avg_pace": { "type": "number", "format": "float" },
+          "distance": { "type": "number", "format": "float" }
+        },
+        "required": [
+          "workoutId",
+          "workout_name",
+          "duration",
+          "calories",
+          "fitnessDetails"
+        ]
+      },
+      "WorkoutCreateDto": {
+        "type": "object",
+        "properties": {
+          "userId": { "$ref": "#/components/schemas/_id" },
+          "date": { "type": "string", "format": "date" },
+          "details": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WorkoutDetailAndFitnessDetailCreateDto"
+            }
+          }
+        },
+        "required": ["userId", "date", "details"]
       }
     }
   }

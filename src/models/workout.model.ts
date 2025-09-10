@@ -91,6 +91,10 @@ const WorkoutSchema = new mongoose.Schema<WorkoutState>(
     date: {
       type: String,
       required: true,
+      validate: {
+        validator: (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v),
+        message: "date는 YYYY-MM-DD 형식이어야 합니다.",
+      },
     },
     details: {
       type: [Schema.Types.ObjectId],

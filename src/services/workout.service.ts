@@ -8,9 +8,12 @@ import {
 } from "../errors";
 import {
   FitnessDetailCreateDto,
+  FitnessDetailUpdateRequestDto,
   WorkoutCreateDto,
   WorkoutDetailAndFitnessDetailCreateDto,
   WorkoutDetailCreateDto,
+  WorkoutDetailUpdateRequestDto,
+  WorkoutUpdateRequestDto,
 } from "../dtos";
 import { FitnessDetailState } from "types";
 
@@ -272,19 +275,14 @@ class WorkoutService {
     }
   }
 
-  // 운동일지 상세 수정
-  async updateWorkoutDetailById(
-    userId: Types.ObjectId,
-    workoutId: Types.ObjectId,
-    workoutDetailId: Types.ObjectId
-  ) {}
-
   // 운동일지 삭제
   async deleteWorkoutById(workoutId: Types.ObjectId, userId: Types.ObjectId) {
     try {
       const workout = await this.getWorkoutById(workoutId);
 
-      if (workout.userId !== userId) {
+      console.log(workout.userId);
+
+      if (String(workout.userId) !== String(userId)) {
         throw new UnauthorizedError("운동일지 삭제 권한 없음");
       }
 
@@ -323,6 +321,67 @@ class WorkoutService {
       if (!result.acknowledged || result.deletedCount === 0) {
         throw new InternalServerError("운동일지 삭제 실패");
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 운동일지 수정
+  async updateWorkout(
+    workoutId: Types.ObjectId,
+    updatedWorkout: WorkoutUpdateRequestDto
+  ) {
+    try {
+      const workout = await workoutRepository.updateWorkout(
+        workoutId,
+        updatedWorkout
+      );
+
+      if (!workout) {
+        throw new NotFoundError("운동일지 조회 실패");
+      }
+
+      return workout;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 운동일지 상세 수정
+  async updateWorkoutDetail(
+    workoutDetailId: Types.ObjectId,
+    updatedDetail: WorkoutDetailUpdateRequestDto
+  ) {
+    try {
+      const detail = await workoutRepository.updateWorkoutDetail(
+        workoutDetailId,
+        updatedDetail
+      );
+
+      if (!detail) {
+        throw new NotFoundError("운동일지 조회 실패");
+      }
+
+      return detail;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 피트니스 상세 수정
+  async updateFitnessDetail(
+    fitnessDetailId: Types.ObjectId,
+    updatedFitness: FitnessDetailUpdateRequestDto
+  ) {
+    try {
+      const fitnessDetail = await workoutRepository.updateFitnessDetail(
+        fitnessDetailId,
+        updatedFitness
+      );
+
+      if (!fitnessDetail) throw new NotFoundError("피트니스 상세 수정");
+
+      return fitnessDetail;
     } catch (error) {
       throw error;
     }

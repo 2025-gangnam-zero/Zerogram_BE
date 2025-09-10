@@ -63,3 +63,23 @@ export interface WorkoutDetailDto
 export interface WorkoutResponseDto extends Omit<WorkoutState, "details"> {
   details: WorkoutDetailDto[];
 }
+
+export interface WorkoutUpdateRequestDto {
+  date?: string;
+}
+
+export interface WorkoutDetailUpdateRequestDto {
+  duration?: number; // 운동 시간
+  calories?: number; // 소모 칼로리
+  feedback?: string; // 소감, 감상
+  avg_pace?: number; // 평균 페이스
+  distance?: number; // 거리
+}
+
+export interface FitnessDetailUpdateRequestDto {
+  body_part?: string; // 부위
+  fitness_type?: string; // 종목
+  sets?: number; // 세트 수
+  reps?: number; // 횟수
+  weight?: number; // 무게
+}

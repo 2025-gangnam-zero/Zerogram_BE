@@ -19,6 +19,7 @@ import {
   deleteFitnessDetail,
   addFitnessDetail,
   updateFitnessDetail,
+  updateWorkout,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -37,8 +38,10 @@ export default () => {
   // --------------------------------------------------------------------------
   // 운동일지 목록 조회
   router.get("/users/me/workouts", authChecker, getWorkoutListById);
+  
   // 운동일지 생성
   router.post("/users/me/workouts", authChecker, createWorkout);
+
   // 운동일지 조회
   router.get("/users/me/workouts/:workoutid", authChecker, getWorkoutById);
 
@@ -55,19 +58,15 @@ export default () => {
     addFitnessDetail
   );
 
-  // 운동일지 삭제
-  router.delete(
-    "/users/me/workouts/:workoutid",
-    authChecker,
-    deleteWorkoutById
-  );
-
   // 운동일지 상세 조회
   router.get(
     "/users/me/workouts/:workoutid/details/:workoutdetailid",
     authChecker,
     getWorkoutDetail
   );
+
+  // 운동일지 수정
+  router.patch("/users/me/workouts/:workoutid", authChecker, updateWorkout);
 
   // 운동일지 상세 수정
   router.patch(
@@ -78,8 +77,16 @@ export default () => {
 
   // 피트니스 상세 수정
   router.patch(
-    "/users/me/workouts/:workoutid/details/detailid/fitnessdetails/fitnessid",
+    "/users/me/workouts/:workoutid/details/:detailid/fitnessdetails/:fitnessid",
+    authChecker,
     updateFitnessDetail
+  );
+
+  // 운동일지 삭제
+  router.delete(
+    "/users/me/workouts/:workoutid",
+    authChecker,
+    deleteWorkoutById
   );
 
   // 운동일지 상세 삭제
