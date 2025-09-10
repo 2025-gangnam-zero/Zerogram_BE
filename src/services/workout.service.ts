@@ -280,10 +280,17 @@ class WorkoutService {
     try {
       const workout = await this.getWorkoutById(workoutId);
 
-      console.log(workout.userId);
-
       if (String(workout.userId) !== String(userId)) {
         throw new UnauthorizedError("운동일지 삭제 권한 없음");
+      }
+
+      // workoutDetails 삭제
+      if (workout.details && workout.details.length !== 0) {
+        await Promise.all(
+          workout.details.map((detail) =>
+            this.deleteWorkoutDetailById(detail._id)
+          )
+        );
       }
 
       const result = await workoutRepository.deleteWorkout(workoutId);
@@ -299,12 +306,25 @@ class WorkoutService {
   // 운동일지 상세 삭제
   async deleteWorkoutDetailById(workoutDetailId: Types.ObjectId) {
     try {
+      const workoutDetail = await this.getWorkoutDetailById(workoutDetailId);
       const result = await workoutRepository.deleteWorkoutDetail(
         workoutDetailId
       );
 
       if (!result.acknowledged || result.deletedCount === 0) {
         throw new InternalServerError("운동일지 삭제 실패");
+      }
+
+      // fitnessDetails 삭제
+      if (
+        workoutDetail.fitnessDetails &&
+        workoutDetail.fitnessDetails.length !== 0
+      ) {
+        await Promise.all(
+          workoutDetail.fitnessDetails.map((detail) =>
+            this.deleteWorkoutDetailById(detail)
+          )
+        );
       }
     } catch (error) {
       throw error;
