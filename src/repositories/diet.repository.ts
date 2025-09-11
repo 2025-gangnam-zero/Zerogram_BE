@@ -1,4 +1,4 @@
-import { DeleteResult, Types, UpdateResult } from "mongoose";
+import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 import { Diet, Food, Meal } from "../models";
 import { DietState, FoodState, MealState } from "../types";
 import { mongoDBErrorHandler } from "../utils";
@@ -33,33 +33,42 @@ class DietRepository {
   }
 
   // 음식 생성
-  async createFood(food: FoodCreateDto): Promise<FoodState> {
+  async createFood(
+    food: FoodCreateDto,
+    session?: ClientSession
+  ): Promise<FoodState> {
     try {
-      const newFood = await Food.create(food);
+      const newFood = await Food.create([food], { session });
 
-      return newFood;
+      return newFood[0];
     } catch (error) {
       throw mongoDBErrorHandler("createDto", error);
     }
   }
 
   // 식단 생성
-  async createMeal(meal: MealCreateDto): Promise<MealState> {
+  async createMeal(
+    meal: MealCreateDto,
+    session?: ClientSession
+  ): Promise<MealState> {
     try {
-      const newMeal = await Meal.create(meal);
+      const newMeal = await Meal.create([meal], { session });
 
-      return newMeal;
+      return newMeal[0];
     } catch (error) {
       throw mongoDBErrorHandler("createMeal", error);
     }
   }
 
   // 식단 일지 생성
-  async createDiet(diet: DietCreateDto): Promise<DietState> {
+  async createDiet(
+    diet: DietCreateDto,
+    session?: ClientSession
+  ): Promise<DietState> {
     try {
-      const newDiet = await Diet.create(diet);
+      const newDiet = await Diet.create([diet], { session });
 
-      return newDiet;
+      return newDiet[0];
     } catch (error) {
       throw mongoDBErrorHandler("createDiet", error);
     }
@@ -68,7 +77,8 @@ class DietRepository {
   // 음식 추가
   async addFoodToMeal(
     mealId: Types.ObjectId,
-    foodId: Types.ObjectId
+    foodId: Types.ObjectId,
+    session?: ClientSession
   ): Promise<MealState | null> {
     try {
       const food = await Meal.findOneAndUpdate(
@@ -83,6 +93,7 @@ class DietRepository {
           upsert: false,
           lean: true,
           omitUndefined: true,
+          session,
         }
       );
 
@@ -95,14 +106,15 @@ class DietRepository {
   // Meal 추가
   async addMealToDiet(
     dietId: Types.ObjectId,
-    mealId: Types.ObjectId
+    mealIds: Types.ObjectId[],
+    session?: ClientSession
   ): Promise<DietState | null> {
     try {
       const diet = await Diet.findOneAndUpdate(
         { _id: dietId },
         {
-          $addToSet: {
-            meals: mealId,
+          $push: {
+            meals: { $each: mealIds },
           },
         },
         {
@@ -110,6 +122,7 @@ class DietRepository {
           upsert: false,
           lean: true,
           omitUndefined: true,
+          session,
         }
       );
 
@@ -122,7 +135,8 @@ class DietRepository {
   // 식단 추가
   async addMeal(
     dietId: Types.ObjectId,
-    meal: MealState
+    meal: MealState,
+    session?: ClientSession
   ): Promise<UpdateResult> {
     try {
       const result = await Diet.updateOne(
@@ -131,6 +145,9 @@ class DietRepository {
           $addToSet: {
             meals: meal,
           },
+        },
+        {
+          session, // 세션 전달
         }
       );
 

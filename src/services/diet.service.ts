@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import mongoose, { ClientSession, Types } from "mongoose";
 import {
   InternalServerError,
   NotFoundError,
@@ -44,9 +44,9 @@ class DietService {
   }
 
   // 음식 생성
-  async createFood(food: FoodCreateDto) {
+  async createFood(food: FoodCreateDto, session?: ClientSession) {
     try {
-      const newFood = await dietRepository.createFood(food);
+      const newFood = await dietRepository.createFood(food, session);
 
       if (!newFood) {
         throw new InternalServerError("음식 생성 실패");
@@ -59,9 +59,12 @@ class DietService {
   }
 
   // 사용자 식단 생성
-  async createMeal(meal: MealCreateDto): Promise<MealState> {
+  async createMeal(
+    meal: MealCreateDto,
+    session?: ClientSession
+  ): Promise<MealState> {
     try {
-      const newMeal = await dietRepository.createMeal(meal);
+      const newMeal = await dietRepository.createMeal(meal, session);
 
       if (!newMeal) {
         throw new InternalServerError("식단 생성 실패");
@@ -74,9 +77,12 @@ class DietService {
   }
 
   // 사용자 일일 식단 생성
-  async createDiet(diet: DietCreateDto): Promise<DietState> {
+  async createDiet(
+    diet: DietCreateDto,
+    session?: ClientSession
+  ): Promise<DietState> {
     try {
-      const newDiet = await dietRepository.createDiet(diet);
+      const newDiet = await dietRepository.createDiet(diet, session);
 
       if (!newDiet) {
         throw new InternalServerError("일일 식단 생성 실패");
@@ -89,9 +95,13 @@ class DietService {
   }
 
   // 식단 상세에 음식 추가
-  async addFoodToMeal(mealId: Types.ObjectId, foodId: Types.ObjectId) {
+  async addFoodToMeal(
+    mealId: Types.ObjectId,
+    foodId: Types.ObjectId,
+    session?: ClientSession
+  ) {
     try {
-      const meal = await dietRepository.addFoodToMeal(mealId, foodId);
+      const meal = await dietRepository.addFoodToMeal(mealId, foodId, session);
 
       if (!meal) {
         throw new InternalServerError("식단 상세 추가 실패");
@@ -104,9 +114,13 @@ class DietService {
   }
 
   // 식단에 식단 상세 추가
-  async addMealToDiet(dietId: Types.ObjectId, mealId: Types.ObjectId) {
+  async addMealsToDiet(
+    dietId: Types.ObjectId,
+    mealIds: Types.ObjectId[],
+    session?: ClientSession
+  ) {
     try {
-      const diet = await dietRepository.addMealToDiet(dietId, mealId);
+      const diet = await dietRepository.addMealToDiet(dietId, mealIds, session);
 
       if (!diet) {
         throw new InternalServerError("식단 상세 추가 실패");
@@ -119,15 +133,17 @@ class DietService {
   }
 
   // 사용자 식단 상세 생성 및 음식 추가
-  async createMealAndFood(meal: MealCreateRequestDto) {
+  async createMealAndFood(meal: MealCreateRequestDto, session?: ClientSession) {
     try {
       const { foods, ...rest } = meal;
       // 사용자 식단 상세 생성
-      const newMeal = await this.createMeal(rest as MealCreateDto);
+      const newMeal = await this.createMeal(rest as MealCreateDto, session);
 
       // 음식 생성
       const newFoods = await Promise.all(
-        foods.map((food) => this.createFood({ ...food, mealId: newMeal._id }))
+        foods.map((food) =>
+          this.createFood({ ...food, mealId: newMeal._id }, session)
+        )
       );
 
       // 음식 아이디 추출
@@ -148,51 +164,61 @@ class DietService {
 
   // 사용자 식단 생성 및 상세 추가
   async createTotalDiet(userId: Types.ObjectId, diet: DietCreateRequestDto) {
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
     try {
       const { meals, ...rest } = diet;
       // 사용자 식단 생성
-      const newDiet = await this.createDiet({
-        ...rest,
-        userId,
-      });
+      const newDiet = await this.createDiet(
+        {
+          ...rest,
+          userId,
+        },
+        session
+      );
 
       // 사용자 식단 상세 생성
       const newMeals = await Promise.all(
         meals.map((meal) =>
-          this.createMealAndFood({ ...meal, dietId: newDiet._id })
+          this.createMealAndFood({ ...meal, dietId: newDiet._id }, session)
         )
       );
 
-      // 사용자 식단 상세 아이디가 추가 안되는 문제 확인할 것 
+      // 사용자 식단 상세 아이디가 추가 안되는 문제 확인할 것
       // 사용자 식단 상세 아이디
       const mealIds = newMeals.map((m) => m._id);
       console.log(mealIds);
 
       // mealId를 식단의 meals에 삽입
-      await Promise.all(
-        mealIds.map((mealId) => this.addMealToDiet(newDiet._id, mealId))
-      );
+      await this.addMealsToDiet(newDiet._id, mealIds, session);
+
+      await session.commitTransaction();
 
       return {
         ...newDiet,
         meals: newMeals,
       };
     } catch (error) {
+      session.abortTransaction();
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 
   // 식단에 meal 추가
   async createMealAndAddToDiet(
     dietId: Types.ObjectId,
-    meal: MealCreateRequestDto
+    meal: MealCreateRequestDto,
+    session?: ClientSession
   ) {
     try {
       // Meal과 food 생성
-      const newMeal = await this.createMealAndFood(meal);
+      const newMeal = await this.createMealAndFood(meal, session);
 
       // meal을 diet에 추가
-      await this.addMealToDiet(dietId, newMeal._id);
+      await this.addMealsToDiet(dietId, [newMeal._id], session);
 
       return newMeal;
     } catch (error) {
@@ -203,19 +229,20 @@ class DietService {
   // food 생성 및 meal에 추가
   async createFoodsAndAddToMeal(
     mealId: Types.ObjectId,
-    foods: FoodCreateDto[]
+    foods: FoodCreateDto[],
+    session?: ClientSession
   ) {
     try {
       // 음식 생성
       const newFoods = await Promise.all(
-        foods.map((food) => this.createFood(food))
+        foods.map((food) => this.createFood(food, session))
       );
 
       const foodIds = newFoods.map((food) => food._id);
 
       // 생성된 음식 추가
       await Promise.all(
-        foodIds.map((foodId) => this.addFoodToMeal(mealId, foodId))
+        foodIds.map((foodId) => this.addFoodToMeal(mealId, foodId, session))
       );
 
       return newFoods;
