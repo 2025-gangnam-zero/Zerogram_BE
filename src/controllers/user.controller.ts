@@ -8,9 +8,10 @@ import {
   userSessionService,
   workoutService,
 } from "../services";
-import { MealState, UserUpdateDto, UserUpdateResponseDto } from "../types";
+import { UserUpdateDto, UserUpdateResponseDto } from "../types";
 import { deleteImage } from "../utils";
 import {
+  DietCreateRequestDto,
   WorkoutCreateDto,
   WorkoutDetailAndFitnessDetailCreateDto,
 } from "../dtos";
@@ -406,7 +407,7 @@ export const updateFitnessDetail = async (req: Request, res: Response) => {
   const { fitnessDetail: updatedFitnessDetail } = req.body;
 
   console.log(updatedFitnessDetail);
-  
+
   if (!fitnessid) {
     throw new BadRequestError("피트니스 상세 아이디 필수");
   }
@@ -414,7 +415,6 @@ export const updateFitnessDetail = async (req: Request, res: Response) => {
   if (!Object.values(updatedFitnessDetail ?? {}).some((v) => v !== undefined)) {
     throw new BadRequestError("변경할 필드가 최소 1개 이상 필수");
   }
-
 
   try {
     const fitnessDetailId = new mongoose.Types.ObjectId(fitnessid);
@@ -540,11 +540,22 @@ export const getDietListById = async (req: Request, res: Response) => {
 
 // 식단 생성
 export const createDiet = async (req: Request, res: Response) => {
-  const user = req.user;
-  const {} = req.body;
+  const userId = req.user._id;
+  const { diet } = req.body;
+  console.log(req.body);
+
+  if (!diet) {
+    throw new BadRequestError("식단 일지 필수");
+  }
+
   try {
-    const meal = {} as MealState;
-    const diet = await dietService.createDiet(user._id, meal);
+    console.log("전달 받은 값", diet);
+
+    const newDiet = await dietService.createTotalDiet(userId, {
+      ...diet,
+    } as DietCreateRequestDto);
+
+    console.log("생성된 값", newDiet);
 
     res.status(201).json({
       success: true,
@@ -552,7 +563,7 @@ export const createDiet = async (req: Request, res: Response) => {
       code: "DIET_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        diet,
+        diet: newDiet,
       },
     });
   } catch (error) {
@@ -560,7 +571,71 @@ export const createDiet = async (req: Request, res: Response) => {
   }
 };
 
-// 식단 생성
+// meal 생성
+export const createMeal = async (req: Request, res: Response) => {
+  const { dietid } = req.params;
+  const { meal } = req.body;
+
+  if (!dietid) {
+    throw new BadRequestError("식단 아이디 필수");
+  }
+
+  if (!meal) {
+    throw new BadRequestError("Meal 정보 필수");
+  }
+
+  try {
+    const dietId = new mongoose.Types.ObjectId(dietid);
+
+    const newMeal = await dietService.createMealAndAddToDiet(dietId, meal);
+
+    res.status(201).json({
+      success: true,
+      message: "일일 식단 상세 추가",
+      code: "DIET_CREATION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        meal: newMeal,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// food 생성
+export const createFood = async (req: Request, res: Response) => {
+  const { mealid } = req.params;
+  const { foods } = req.body;
+
+  if (!mealid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
+
+  if (!foods) {
+    throw new BadRequestError("food 정보 필수");
+  }
+
+  try {
+    const mealId = new mongoose.Types.ObjectId(mealid);
+
+    const newFoods = await dietService.createFoodsAndAddToMeal(mealId, foods);
+
+    res.status(201).json({
+      success: true,
+      message: "음식 목록 추가",
+      code: "DIET_CREATION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        foods: newFoods,
+      },
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 식단 조회
 export const getDietById = async (req: Request, res: Response) => {
   const user = req.user;
   const { dietId } = req.body;

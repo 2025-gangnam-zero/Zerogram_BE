@@ -1,7 +1,13 @@
 import { DeleteResult, Types, UpdateResult } from "mongoose";
-import { Diet, Meal } from "../models";
-import { DietState, MealState, MealUpdateDto } from "../types";
+import { Diet, Food, Meal } from "../models";
+import { DietState, FoodState, MealState } from "../types";
 import { mongoDBErrorHandler } from "../utils";
+import {
+  DietCreateDto,
+  FoodCreateDto,
+  MealCreateDto,
+  MealCreateRequestDto,
+} from "../dtos";
 
 class DietRepository {
   // 식단 일지 목록 조회
@@ -26,25 +32,90 @@ class DietRepository {
     }
   }
 
-  // 식단 일지 생성
-  async createDiet(userId: Types.ObjectId) {
+  // 음식 생성
+  async createFood(food: FoodCreateDto): Promise<FoodState> {
     try {
-      const diet = await Diet.create({ userId });
+      const newFood = await Food.create(food);
 
-      return diet;
+      return newFood;
     } catch (error) {
-      throw mongoDBErrorHandler("createDiet", error);
+      throw mongoDBErrorHandler("createDto", error);
     }
   }
 
-  // 식단 일지 - 식단 생성
-  async createMeal(_id: Types.ObjectId, meal: MealState): Promise<MealState> {
+  // 식단 생성
+  async createMeal(meal: MealCreateDto): Promise<MealState> {
     try {
       const newMeal = await Meal.create(meal);
 
       return newMeal;
     } catch (error) {
       throw mongoDBErrorHandler("createMeal", error);
+    }
+  }
+
+  // 식단 일지 생성
+  async createDiet(diet: DietCreateDto): Promise<DietState> {
+    try {
+      const newDiet = await Diet.create(diet);
+
+      return newDiet;
+    } catch (error) {
+      throw mongoDBErrorHandler("createDiet", error);
+    }
+  }
+
+  // 음식 추가
+  async addFoodToMeal(
+    mealId: Types.ObjectId,
+    foodId: Types.ObjectId
+  ): Promise<MealState | null> {
+    try {
+      const food = await Meal.findOneAndUpdate(
+        { _id: mealId },
+        {
+          $addToSet: {
+            foods: foodId,
+          },
+        },
+        {
+          new: true,
+          upsert: false,
+          lean: true,
+          omitUndefined: true,
+        }
+      );
+
+      return food;
+    } catch (error) {
+      throw mongoDBErrorHandler("addFoodToMeal", error);
+    }
+  }
+
+  // Meal 추가
+  async addMealToDiet(
+    dietId: Types.ObjectId,
+    mealId: Types.ObjectId
+  ): Promise<DietState | null> {
+    try {
+      const diet = await Diet.findOneAndUpdate(
+        { _id: dietId },
+        {
+          $addToSet: {
+            meals: mealId,
+          },
+        },
+        {
+          new: true,
+          upsert: false,
+          lean: true,
+          omitUndefined: true,
+        }
+      );
+
+      return diet;
+    } catch (error) {
+      throw mongoDBErrorHandler("addMealToDiet", error);
     }
   }
 
@@ -97,7 +168,7 @@ class DietRepository {
   // 식단 수정하기
   async updateMeal(
     _id: Types.ObjectId,
-    updatedMeal: MealUpdateDto
+    updatedMeal: MealCreateRequestDto
   ): Promise<UpdateResult> {
     try {
       const result = await Meal.updateOne({ _id }, updatedMeal);

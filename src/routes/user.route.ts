@@ -20,6 +20,9 @@ import {
   addFitnessDetail,
   updateFitnessDetail,
   updateWorkout,
+  getDietListById,
+  createMeal,
+  createFood,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -38,7 +41,7 @@ export default () => {
   // --------------------------------------------------------------------------
   // 운동일지 목록 조회
   router.get("/users/me/workouts", authChecker, getWorkoutListById);
-  
+
   // 운동일지 생성
   router.post("/users/me/workouts", authChecker, createWorkout);
 
@@ -103,8 +106,15 @@ export default () => {
   );
 
   // --------------------------------------------------------------------------
-  router.get("/users/me/diets", authChecker, getDietById);
+
+  router.get("/users/me/diets", authChecker, getDietListById);
+  // 식단 일지 생성
   router.post("/users/me/diets", authChecker, createDiet);
+  // 식단 일지 meal 생성
+  router.post("/users/me/diets/:dietid/", authChecker, createMeal);
+  // 식단 일지 food 생성
+  router.post("/users/me/diets/:dietid/meals/:mealid", authChecker, createFood);
+  //
   router.get("/users/me/diets/:dietid", authChecker, getDietById);
   router.patch("/users/me/diets/:dietid", authChecker, updateDietFeedbackById);
   router.delete("/users/me/diets/:dietid", authChecker, deleteDietById);

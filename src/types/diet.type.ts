@@ -1,27 +1,29 @@
 import { Types } from "mongoose";
 
-export interface MealState {
+export interface FoodState {
   _id: Types.ObjectId;
-  dietId: Types.ObjectId;
-  meal_type: string;
+  mealId: Types.ObjectId;
   food_name: string;
-  food_amount: number;
-  calories: number;
+  food_amount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface MealUpdateDto {
+export interface MealState {
+  _id: Types.ObjectId;
+  dietId: Types.ObjectId;
   meal_type?: string;
-  food_name?: string;
-  food_amount?: number;
-  calories?: number;
+  foods: Types.ObjectId[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface DietState {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
-  meals: MealState[];
+  date: string;
+  meals: Types.ObjectId[];
+  total_calories: number;
   feedback?: string;
   createdAt: Date;
   updatedAt: Date;

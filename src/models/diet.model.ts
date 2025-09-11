@@ -1,5 +1,21 @@
 import mongoose, { Schema } from "mongoose";
-import { DietState, MealState } from "../types";
+import { DietState, FoodState, MealState } from "../types";
+
+const FoodSchema = new mongoose.Schema<FoodState>({
+  mealId: {
+    type: Schema.Types.ObjectId,
+    ref: "Meal",
+  },
+  food_name: {
+    type: String,
+    required: true,
+  },
+  food_amount: {
+    type: Number,
+  },
+});
+
+export const Food = mongoose.model("Food", FoodSchema);
 
 const MealSchema = new mongoose.Schema<MealState>(
   {
@@ -10,19 +26,11 @@ const MealSchema = new mongoose.Schema<MealState>(
     },
     meal_type: {
       type: String,
-      required: true,
     },
-    food_name: {
-      type: String,
-      required: true,
-    },
-    food_amount: {
-      type: Number,
-      default: 0,
-    },
-    calories: {
-      type: Number,
-      default: 0,
+    foods: {
+      type: [Schema.Types.ObjectId],
+      ref: "Food",
+      default: [],
     },
   },
   {
@@ -42,8 +50,17 @@ const DietSchema = new mongoose.Schema<DietState>(
     },
 
     meals: {
-      type: [MealSchema],
+      type: [Schema.Types.ObjectId],
+      ref: "Meal",
       default: [],
+    },
+
+    date: {
+      type: String,
+    },
+    total_calories: {
+      type: Number,
+      default: 0,
     },
 
     feedback: {

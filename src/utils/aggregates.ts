@@ -1,6 +1,6 @@
 import { Types } from "mongoose";
-import { Workout } from "../models";
-import { WorkoutResponseDto } from "../dtos";
+import { Diet, Workout } from "../models";
+import { DietCreateResponseDto, WorkoutResponseDto } from "../dtos";
 
 // 존재하지 않을 수 있으니 | null 반환을 권장합니다.
 export async function aggregateGetWorkoutById(
@@ -210,4 +210,187 @@ export async function aggregateGetWorkoutsByUserIdForMonth(
   ]);
 
   return result as WorkoutResponseDto[];
+}
+
+export async function aggregateGetDietById(
+  dietId: Types.ObjectId
+): Promise<DietCreateResponseDto | null> {
+  const result = await Workout.aggregate([
+    { $match: { _id: dietId } },
+
+    // date 필드 보강: 저장돼 있으면 그대로, 없으면 createdAt(KST)로 계산
+    {
+      $addFields: {
+        date: {
+          $ifNull: [
+            "$date",
+            {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+                timezone: "Asia/Seoul",
+              },
+            },
+          ],
+        },
+      },
+    },
+
+    {
+      $lookup: {
+        from: "meals",
+        localField: "meals",
+        foreignField: "_id",
+        as: "meals",
+        pipeline: [
+          {
+            $lookup: {
+              from: "foods",
+              localField: "foods",
+              foreignField: "_id",
+              as: "foods",
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              dietId: 1,
+              workout_name: 1,
+              meal_type: 1,
+              createdAt: 1,
+              updatedAt: 1,
+              foods: {
+                $map: {
+                  input: "$foods",
+                  as: "f",
+                  in: {
+                    _id: "$$f._id",
+                    mealId: "$$f.mealId",
+                    food_name: "$$f.food_name",
+                    food_amount: "$$f.food_amount",
+                    createdAt: "$$f.createdAt",
+                    updatedAt: "$$f.updatedAt",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+
+    // 최종 형태 정리 (WorkoutResponseDto)
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        total_calories: 1,
+        feedback: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        date: "$_date",
+        meals: 1,
+      },
+    },
+    { $limit: 1 },
+  ]);
+
+  return (result[0] as DietCreateResponseDto) || null;
+}
+
+export async function aggregateGetDietListByUserIdForMonth(
+  userId: Types.ObjectId,
+  year: number,
+  month1to12: number
+): Promise<DietCreateResponseDto[]> {
+  const { start, end } = getMonthStringRange(year, month1to12);
+
+  const result = await Diet.aggregate([
+    { $match: { userId } },
+
+    // 1) _date 계산: date 있으면 그대로, 없으면 createdAt을 KST 기준 YYYY-MM-DD로 변환
+    {
+      $addFields: {
+        _date: {
+          $ifNull: [
+            "$date",
+            {
+              $dateToString: {
+                format: "%Y-%m-%d",
+                date: "$createdAt",
+                timezone: "Asia/Seoul",
+              },
+            },
+          ],
+        },
+      },
+    },
+
+    // 2) 문자열 범위 매칭: "YYYY-MM-DD"는 사전식 정렬이 날짜 순과 동일
+    { $match: { _date: { $gte: start, $lt: end } } },
+
+    // 3) details → WorkoutDetail, fitnessDetails → FitnessDetail 조인
+    {
+      $lookup: {
+        from: "meals",
+        localField: "meals",
+        foreignField: "_id",
+        as: "meals",
+        pipeline: [
+          {
+            $lookup: {
+              from: "foods",
+              localField: "foods",
+              foreignField: "_id",
+              as: "foods",
+            },
+          },
+          // meals 모양으로 정리
+          {
+            $project: {
+              _id: 1,
+              dietId: 1,
+              workout_name: 1,
+              meal_type: 1,
+              createdAt: 1,
+              updatedAt: 1,
+              foods: {
+                $map: {
+                  input: "$foods",
+                  as: "f",
+                  in: {
+                    _id: "$$f._id",
+                    mealId: "$$f.mealId",
+                    food_name: "$$f.food_name",
+                    food_amount: "$$f.food_amount",
+                    createdAt: "$$f.createdAt",
+                    updatedAt: "$$f.updatedAt",
+                  },
+                },
+              },
+            },
+          },
+        ],
+      },
+    },
+
+    // 4) 최종 응답 형태(WorkoutResponseDto)로 정리
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        date: "$_date", // ← date 문자열로 반환
+        total_calories: 1,
+        feedback: 1,
+        meals: 1,
+      },
+    },
+
+    // 5) 최신순 정렬 (date → createdAt 보조)
+    { $sort: { date: -1, createdAt: -1 } },
+  ]);
+
+  return result as DietCreateResponseDto[];
 }
