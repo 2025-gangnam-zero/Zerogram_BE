@@ -478,6 +478,679 @@
           }
         }
       }
+    },
+    "/users/me/workouts/{workoutid}": {
+      "post": {
+        "tags": ["User"],
+        "summary": "운동일지 상세 생성",
+        "description": "이미 생성된 운동일지에 운동 상세(운동 종류, 세부 운동 정보)를 추가합니다.",
+        "operationId": "createWorkoutDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "details": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/WorkoutDetailAndFitnessDetailCreateDto"
+                    }
+                  }
+                },
+                "required": ["details"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "운동일지 상세 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "운동일지 상세 생성 성공"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "WORKOUT_DETAIL_CREATION_SUCCEEDED"
+                    },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "workout": {
+                          "$ref": "#/components/schemas/WorkoutResponseDto"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(운동일지 ID 또는 운동 상세 누락)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["User"],
+        "summary": "운동일지 수정",
+        "description": "운동일지의 상위 정보(예: 날짜 등)를 수정합니다.",
+        "operationId": "updateWorkout",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "workout": {
+                    "$ref": "#/components/schemas/WorkoutUpdateRequestDto"
+                  }
+                },
+                "required": ["workout"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "운동일지 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "운동일지 수정 성공"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "UPDATE_WORKOUT_SUCCEEDED"
+                    },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "workout": {
+                          "$ref": "#/components/schemas/WorkoutResponseDto"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(운동일지 ID 누락 또는 변경할 필드 없음)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "운동일지를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User"],
+        "summary": "운동일지 삭제",
+        "operationId": "deleteWorkoutById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "운동일지 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteWorkoutResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "운동일지를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/workouts/{workoutid}/details/{detailid}": {
+      "post": {
+        "tags": ["User"],
+        "summary": "운동일지 피트니스 상세 생성",
+        "description": "이미 생성된 운동일지 상세(WorkoutDetail)에 피트니스 세부 항목(FitnessDetail)들을 추가합니다.",
+        "operationId": "addFitnessDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          },
+          {
+            "in": "path",
+            "name": "detailid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 상세(WorkoutDetail) ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fitnessDetails": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/FitnessDetailCreateDto"
+                    }
+                  }
+                },
+                "required": ["fitnessDetails"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "피트니스 상세 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": {
+                      "type": "string",
+                      "example": "피트니스 상세 생성 성공"
+                    },
+                    "code": {
+                      "type": "string",
+                      "example": "FITNESS_DETAIL_CREATION_SUCCEEDED"
+                    },
+                    "timestamp": { "type": "string", "format": "date-time" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "workoutDetail": {
+                          "$ref": "#/components/schemas/WorkoutDetailDto"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(운동일지/상세 ID 또는 fitnessDetails 누락)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "운동일지 상세를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": ["User"],
+        "summary": "운동일지 상세 수정",
+        "description": "특정 운동일지 상세(WorkoutDetail)의 필드를 부분 수정합니다.",
+        "operationId": "updateWorkoutDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          },
+          {
+            "in": "path",
+            "name": "workoutdetailid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 상세(WorkoutDetail) ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "detail": {
+                    "$ref": "#/components/schemas/WorkoutDetailUpdateRequestDto"
+                  }
+                },
+                "required": ["detail"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "운동일지 상세 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateWorkoutDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(필수 ID 누락 또는 변경할 필드 없음)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "운동일지 상세를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/details/{detailid}": {
+      "delete": {
+        "tags": ["User"],
+        "summary": "운동일지 상세 삭제",
+        "operationId": "deleteWorkoutDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "detailid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 상세(WorkoutDetail) ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "운동일지 상세 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteWorkoutDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(상세 ID 누락 등)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "운동일지 상세를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/workouts/{workoutid}/details/{detailid}/fitnessdetails/{fitnessid}": {
+      "patch": {
+        "tags": ["User"],
+        "summary": "피트니스 상세 수정",
+        "description": "특정 운동일지 상세(WorkoutDetail)에 속한 피트니스 상세(FitnessDetail)를 부분 수정합니다.",
+        "operationId": "updateFitnessDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "workoutid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 ID"
+          },
+          {
+            "in": "path",
+            "name": "detailid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "운동일지 상세(WorkoutDetail) ID"
+          },
+          {
+            "in": "path",
+            "name": "fitnessid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "피트니스 상세(FitnessDetail) ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "fitnessDetail": {
+                    "$ref": "#/components/schemas/FitnessDetailUpdateRequestDto"
+                  }
+                },
+                "required": ["fitnessDetail"],
+                "additionalProperties": false
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "피트니스 상세 수정 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateFitnessDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(필수 ID 누락 또는 변경할 필드 없음)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "피트니스 상세를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/fitnessdetails/{fitnessdetailid}": {
+      "delete": {
+        "tags": ["User"],
+        "summary": "피트니스 상세 삭제",
+        "operationId": "deleteFitnessDetail",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "fitnessdetailid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "피트니스 상세(FitnessDetail) ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "피트니스 상세 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteFitnessDetailResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(피트니스 상세 ID 누락 등)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "피트니스 상세를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -886,6 +1559,74 @@
           }
         },
         "required": ["userId", "date", "details"]
+      },
+      "DeleteWorkoutResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "운동일지 삭제 성공" },
+          "code": { "type": "string", "example": "WORKOUT_DELETION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpdateWorkoutDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "운동일지 상세 수정 성공" },
+          "code": {
+            "type": "string",
+            "example": "UPDATE_WORKOUT_DETAIL_SUCCEEDED"
+          },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "detail": { "$ref": "#/components/schemas/WorkoutDetailDto" }
+            }
+          }
+        }
+      },
+      "DeleteWorkoutDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "운동일지 상세 삭제 성공" },
+          "code": {
+            "type": "string",
+            "example": "WORKOUT_DETAIL_DELETION_SUCCEEDED"
+          },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "UpdateFitnessDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "피트니스 상세 수정 성공" },
+          "code": {
+            "type": "string",
+            "example": "UPDATE_FITNESS_DETAIL_SUCCEEDED"
+          },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "fitnessDetail": {
+                "$ref": "#/components/schemas/FitnessDetailDto"
+              }
+            }
+          }
+        }
+      },
+      "DeleteFitnessDetailResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "피트니스 삭제 성공" },
+          "code": { "type": "string", "example": "FITNESS_DELETION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
       }
     }
   }
