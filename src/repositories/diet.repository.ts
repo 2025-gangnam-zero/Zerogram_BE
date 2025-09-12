@@ -52,9 +52,11 @@ class DietRepository {
     session?: ClientSession
   ): Promise<MealState> {
     try {
-      const newMeal = await Meal.create([meal], { session });
+      const [doc] = await Meal.create([meal], { session });
 
-      return newMeal[0];
+      const mealObj = doc.toObject({ versionKey: false });
+
+      return mealObj;
     } catch (error) {
       throw mongoDBErrorHandler("createMeal", error);
     }
@@ -66,9 +68,11 @@ class DietRepository {
     session?: ClientSession
   ): Promise<DietState> {
     try {
-      const newDiet = await Diet.create([diet], { session });
+      const [newDiet] = await Diet.create([diet], { session });
 
-      return newDiet[0];
+      const dietObject = newDiet.toObject();
+
+      return dietObject;
     } catch (error) {
       throw mongoDBErrorHandler("createDiet", error);
     }
@@ -83,7 +87,7 @@ class DietRepository {
     try {
       console.log(mealId);
       console.log(foodIds);
-      const food = await Meal.findOneAndUpdate(
+      const meal = await Meal.findOneAndUpdate(
         { _id: mealId },
         {
           $addToSet: {
@@ -97,7 +101,9 @@ class DietRepository {
         }
       );
 
-      return food;
+      console.log("meal", meal);
+
+      return meal;
     } catch (error) {
       throw mongoDBErrorHandler("addFoodToMeal", error);
     }

@@ -159,7 +159,7 @@ class DietService {
 
       console.log(foodIds);
 
-      await this.addFoodsToMeal(newMeal._id, foodIds);
+      await this.addFoodsToMeal(newMeal._id, foodIds, session);
 
       return {
         ...newMeal,
@@ -193,6 +193,7 @@ class DietService {
         )
       );
 
+      console.log(newMeals);
       // 사용자 식단 상세 아이디가 추가 안되는 문제 확인할 것
       // 사용자 식단 상세 아이디
       const mealIds = newMeals.map((m) => m._id);
