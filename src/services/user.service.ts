@@ -7,7 +7,7 @@ import {
 } from "../errors";
 import { userRepository } from "../repositories";
 import { UserState, UserUpdateDto } from "../types";
-import { checkPassword, hashPassword } from "../utils";
+import { checkPassword, deleteImage, hashPassword } from "../utils";
 
 class UserService {
   // _id를 이용한 사용자 조회
@@ -176,6 +176,19 @@ class UserService {
       if (result.deletedCount === 0) {
         throw new InternalServerError("사용자 삭제 실패");
       }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 사용자 프로필 사진 삭제
+  async deleteProfileImage(userId: Types.ObjectId, profile_image: string) {
+    try {
+      // s3에서 이미지 삭제
+      await deleteImage(profile_image.split(".com/")[1]);
+
+      // 사용자 정보에서 이미지 정보 초기화
+      await this.updateMe(userId, { profile_image: "" });
     } catch (error) {
       throw error;
     }

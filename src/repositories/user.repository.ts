@@ -42,13 +42,10 @@ class UserRepository {
     _id: Types.ObjectId,
     updateUserInfo: UserUpdateDto
   ): Promise<UpdateResult> {
-    console.log(updateUserInfo);
+    console.log("전달값", updateUserInfo);
 
     try {
-      const result = await User.updateOne(
-        { _id },
-        { $set: { ...updateUserInfo } }
-      );
+      const result = await User.updateOne({ _id }, { $set: updateUserInfo });
 
       return result;
     } catch (error) {

@@ -23,6 +23,7 @@ import {
   getDietListById,
   createMeal,
   createFood,
+  deleteProfileImage,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -38,6 +39,7 @@ export default () => {
     updateMe
   );
   router.delete("/users/me", authChecker, deleteMe);
+  router.delete("/users/me/profile-image", authChecker, deleteProfileImage);
   // --------------------------------------------------------------------------
   // 운동일지 목록 조회
   router.get("/users/me/workouts", authChecker, getWorkoutListById);

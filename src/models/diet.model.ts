@@ -1,19 +1,25 @@
 import mongoose, { Schema } from "mongoose";
 import { DietState, FoodState, MealState } from "../types";
 
-const FoodSchema = new mongoose.Schema<FoodState>({
-  mealId: {
-    type: Schema.Types.ObjectId,
-    ref: "Meal",
+const FoodSchema = new mongoose.Schema<FoodState>(
+  {
+    mealId: {
+      type: Schema.Types.ObjectId,
+      ref: "Meal",
+    },
+    food_name: {
+      type: String,
+      required: true,
+    },
+    food_amount: {
+      type: Number,
+    },
   },
-  food_name: {
-    type: String,
-    required: true,
-  },
-  food_amount: {
-    type: Number,
-  },
-});
+  {
+    versionKey: false,
+    timestamps: true,
+  }
+);
 
 export const Food = mongoose.model("Food", FoodSchema);
 

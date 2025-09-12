@@ -111,6 +111,23 @@ export const deleteMe = async (req: Request, res: Response) => {
   }
 };
 
+// 프로필 초기화
+export const deleteProfileImage = async (req: Request, res: Response) => {
+  const user = req.user;
+  try {
+    await userService.deleteProfileImage(user._id, user.profile_image!);
+
+    res.status(200).json({
+      succes: true,
+      message: "프로필 초기화 성공",
+      code: "INITIALIZE_PROFILE_IMAGE_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
 // 운동 일지 목록 조회
 export const getWorkoutListById = async (req: Request, res: Response) => {
   const user = req.user;

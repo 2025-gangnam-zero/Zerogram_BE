@@ -75,24 +75,24 @@ class DietRepository {
   }
 
   // 음식 추가
-  async addFoodToMeal(
+  async addFoodsToMeal(
     mealId: Types.ObjectId,
-    foodId: Types.ObjectId,
+    foodIds: Types.ObjectId[],
     session?: ClientSession
   ): Promise<MealState | null> {
     try {
+      console.log(mealId);
+      console.log(foodIds);
       const food = await Meal.findOneAndUpdate(
         { _id: mealId },
         {
           $addToSet: {
-            foods: foodId,
+            foods: { $each: foodIds },
           },
         },
         {
           new: true,
-          upsert: false,
           lean: true,
-          omitUndefined: true,
           session,
         }
       );
@@ -113,7 +113,7 @@ class DietRepository {
       const diet = await Diet.findOneAndUpdate(
         { _id: dietId },
         {
-          $push: {
+          $addToSet: {
             meals: { $each: mealIds },
           },
         },
