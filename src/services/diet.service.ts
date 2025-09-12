@@ -12,13 +12,22 @@ import {
   FoodCreateDto,
   MealCreateRequestDto,
   MealCreateDto,
+  DietCreateResponseDto,
 } from "dtos";
 
 class DietService {
   // 사용자 일일 식단 목록 조회
-  async getDietListByUserId(userId: Types.ObjectId): Promise<DietState[]> {
+  async getDietListByUserId(
+    userId: Types.ObjectId,
+    year: number,
+    month: number
+  ): Promise<DietCreateResponseDto[]> {
     try {
-      const diets = await dietRepository.getDietListByUserId(userId);
+      const diets = await dietRepository.getDietListByUserId(
+        userId,
+        year,
+        month
+      );
 
       return diets;
     } catch (error) {

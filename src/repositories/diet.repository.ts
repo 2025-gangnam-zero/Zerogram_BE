@@ -1,9 +1,13 @@
 import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 import { Diet, Food, Meal } from "../models";
 import { DietState, FoodState, MealState } from "../types";
-import { mongoDBErrorHandler } from "../utils";
+import {
+  aggregateGetDietListByUserIdForMonth,
+  mongoDBErrorHandler,
+} from "../utils";
 import {
   DietCreateDto,
+  DietCreateResponseDto,
   FoodCreateDto,
   MealCreateDto,
   MealCreateRequestDto,
@@ -11,9 +15,17 @@ import {
 
 class DietRepository {
   // 식단 일지 목록 조회
-  async getDietListByUserId(userId: Types.ObjectId): Promise<DietState[]> {
+  async getDietListByUserId(
+    userId: Types.ObjectId,
+    year: number,
+    month: number
+  ): Promise<DietCreateResponseDto[]> {
     try {
-      const diets = await Diet.find({ userId });
+      const diets = await aggregateGetDietListByUserIdForMonth(
+        userId,
+        year,
+        month
+      );
 
       return diets;
     } catch (error) {

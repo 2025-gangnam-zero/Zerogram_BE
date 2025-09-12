@@ -538,8 +538,19 @@ export const deleteFitnessDetail = async (req: Request, res: Response) => {
 // 사용자의 일일 식단 목록
 export const getDietListById = async (req: Request, res: Response) => {
   const user = req.user;
+  const { year, month } = req.query;
+
+  if (!year || !month) {
+    throw new BadRequestError("날짜 정보 필수");
+  }
   try {
-    const diets = await dietService.getDietListByUserId(user._id);
+    console.log(year, month);
+    
+    const diets = await dietService.getDietListByUserId(
+      user._id,
+      Number(year),
+      Number(month)
+    );
 
     res.status(200).json({
       success: true,
