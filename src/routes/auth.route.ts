@@ -16,7 +16,7 @@ export default () => {
   router.get("/auth/oauth", oauth);
   router.post("/auth/login", login);
   router.post("/auth/logout", authChecker, logout);
-  router.post("/auth/verify-password", verifyPassword);
+  router.post("/auth/verify-password", authChecker, verifyPassword);
   router.post("/auth/reset-password", resetPassword);
 
   return router;

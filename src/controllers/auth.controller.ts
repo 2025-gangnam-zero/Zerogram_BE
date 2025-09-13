@@ -289,15 +289,18 @@ export const resetPassword = async (req: Request, res: Response) => {
 // 비밀번호 확인
 export const verifyPassword = async (req: Request, res: Response) => {
   const user = req.user;
-  const { password } = req.body;
+  const { currentPassword } = req.body;
 
-  if (!password) {
+  if (!currentPassword) {
     throw new BadRequestError("비밀번호 필수");
   }
 
   try {
     // 비밀번호 일치 확인
-    const isPasswordMatched = await checkPassword(password, user.password!);
+    const isPasswordMatched = await checkPassword(
+      currentPassword,
+      user.password!
+    );
 
     res.status(200).json({
       success: true,
