@@ -289,9 +289,9 @@ export const resetPassword = async (req: Request, res: Response) => {
 // 비밀번호 확인
 export const verifyPassword = async (req: Request, res: Response) => {
   const user = req.user;
-  const { currentPassword } = req.body;
+  const { password } = req.body;
 
-  if (!currentPassword) {
+  if (!password) {
     res.status(204).json({
       success: true,
       message: "비밀번호 변경 아님",
@@ -302,10 +302,7 @@ export const verifyPassword = async (req: Request, res: Response) => {
 
   try {
     // 비밀번호 일치 확인
-    const isPasswordMatched = await checkPassword(
-      currentPassword,
-      user.password!
-    );
+    const isPasswordMatched = await checkPassword(password, user.password!);
 
     res.status(200).json({
       success: true,
