@@ -4,6 +4,7 @@ import { userService, userSessionService } from "../services";
 import { OauthInfo, OauthType, UserState } from "../types";
 import { oauths } from "../data";
 import { OAUTH_REDIRECT_URI, OAUTH_GRANT_TYPE, CLIENT_URL } from "../constants";
+import { checkPassword } from "../utils";
 
 // 회원 가입
 export const signup = async (req: Request, res: Response) => {
@@ -94,7 +95,6 @@ export const login = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   const sessionId = req.sessionId;
   try {
-
     // 사용자 세션 생성
     await userSessionService.deleteUserSessionById(sessionId);
 
@@ -281,6 +281,33 @@ export const oauth = async (req: Request, res: Response) => {
 // 비밀번호 재설정
 export const resetPassword = async (req: Request, res: Response) => {
   try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 비밀번호 확인
+export const verifyPassword = async (req: Request, res: Response) => {
+  const user = req.user;
+  const { password } = req.body;
+
+  if (!password) {
+    throw new BadRequestError("비밀번호 필수");
+  }
+
+  try {
+    // 비밀번호 일치 확인
+    const isPasswordMatched = await checkPassword(password, user.password!);
+
+    res.status(200).json({
+      success: true,
+      message: "비밀번호 확인 성공",
+      code: "CHECK_PASSWORD_MATCH_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+      data: {
+        isPasswordMatched,
+      },
+    });
   } catch (error) {
     throw error;
   }
