@@ -292,7 +292,12 @@ export const verifyPassword = async (req: Request, res: Response) => {
   const { currentPassword } = req.body;
 
   if (!currentPassword) {
-    throw new BadRequestError("비밀번호 필수");
+    res.status(204).json({
+      success: true,
+      message: "비밀번호 변경 아님",
+      code: "NOT_CHANGE_PASSWORD",
+      timestamp: new Date().toISOString(),
+    });
   }
 
   try {
