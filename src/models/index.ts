@@ -3,3 +3,6 @@ export * from "./meeting.model";
 export * from "./diet.model";
 export * from "./workout.model";
 export * from "./user-session.model";
+export * from "./room.model";
+export * from "./roomMembership.model";
+export * from "./message.model";
