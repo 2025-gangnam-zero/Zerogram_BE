@@ -124,7 +124,7 @@ export const initSocket = (server: HttpServer) => {
 
           // 전송자 제외 브로드캐스트(중복 수신 방지)
           //   socket.to(payload.roomId).emit("msg:new", { msg });
-          io.emit("msg:new", { msg });
+          socket.broadcast.emit("msg:new", { msg });
 
           // 전송자에게 ACK (tmp id 교체용)
           ack?.({ ok: true, serverId: msg.id });

@@ -6,3 +6,7 @@ export * from "./meeting.type";
 export * from "./auth.type";
 export * from "./body.type";
 export * from "./room.type";
+export * from "./roomMembership.type";
+export * from "./message.type";
+export * from "./messageReaction.type";
+export * from "./chatNotification.type";
