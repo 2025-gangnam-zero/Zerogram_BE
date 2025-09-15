@@ -46,3 +46,19 @@ export interface DietCreateResponseDto {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface DietUpdateRequestDto {
+  feedback?: string;
+  total_calories?: number;
+  meals?: MealUpdateRequestDto[];
+}
+
+export interface MealUpdateRequestDto {
+  meal_type?: string;
+  foods?: FoodUpdateRequestDto[];
+}
+
+export interface FoodUpdateRequestDto {
+  food_name?: string;
+  food_amount?: number;
+}

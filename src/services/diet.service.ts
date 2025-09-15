@@ -13,6 +13,7 @@ import {
   MealCreateRequestDto,
   MealCreateDto,
   DietCreateResponseDto,
+  DietUpdateRequestDto,
 } from "dtos";
 
 class DietService {
@@ -289,30 +290,6 @@ class DietService {
     }
   }
 
-  // 식단 수정
-  async updateFeedback(
-    dietId: Types.ObjectId,
-    feedback: string,
-    userId: Types.ObjectId
-  ): Promise<void> {
-    try {
-      // 식단 조회 및 권한 확인
-      await this.getDietById(dietId, userId);
-
-      const result = await dietRepository.updateDietFeedback(dietId, feedback);
-
-      if (result.matchedCount === 0) {
-        throw new NotFoundError("일일 식단 조회 실패");
-      }
-
-      if (result.modifiedCount === 0) {
-        throw new InternalServerError("일일 식단 피드백 수정 실패");
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
-
   // 식단 삭제
   async deleteDietById(
     dietId: Types.ObjectId,
@@ -334,6 +311,78 @@ class DietService {
       throw error;
     }
   }
+
+  // Meal 삭제
+  async deleteMealById(
+    dietId: Types.ObjectId,
+    mealId: Types.ObjectId,
+    userId: Types.ObjectId
+  ) {
+    try {
+      // diet 조회
+      await this.getDietById(dietId, userId);
+
+      const result = await dietRepository.deleteMeal(mealId);
+
+      if (!result.acknowledged) {
+        throw new InternalServerError("Meal 삭제 승인 실패");
+      }
+
+      if (result.deletedCount === 0) {
+        throw new InternalServerError("Meal 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 음식 삭제
+  async deleteFoodById(
+    dietId: Types.ObjectId,
+    foodId: Types.ObjectId,
+    userId: Types.ObjectId
+  ) {
+    try {
+      await this.getDietById(dietId, userId);
+
+      const result = await dietRepository.deleteFood(foodId);
+
+      if (!result.acknowledged) {
+        throw new InternalServerError("음식 삭제 승인 실패");
+      }
+
+      if (result.deletedCount === 0) {
+        throw new InternalServerError("음식 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 식단 수정
+  async updateDiet(
+    dietId: Types.ObjectId,
+    updatedDiet: DietUpdateRequestDto,
+    userId: Types.ObjectId
+  ): Promise<DietState> {
+    try {
+      // 식단 조회 및 권한 확인
+      await this.getDietById(dietId, userId);
+
+      const diet = await dietRepository.updateDiet(dietId, updatedDiet);
+
+      if (!diet) {
+        throw new InternalServerError("식단 수정 실패");
+      }
+
+      return diet;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // meals 수정
+  async updateMeals(dietId: Types.ObjectId,) {}
 }
 
 export default new DietService();

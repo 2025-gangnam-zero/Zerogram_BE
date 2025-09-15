@@ -545,7 +545,7 @@ export const getDietListById = async (req: Request, res: Response) => {
   }
   try {
     console.log(year, month);
-    
+
     const diets = await dietService.getDietListByUserId(
       user._id,
       Number(year),
@@ -601,8 +601,9 @@ export const createDiet = async (req: Request, res: Response) => {
 
 // meal 생성
 export const createMeal = async (req: Request, res: Response) => {
+  const userId = req.user._id;
   const { dietid } = req.params;
-  const { meal } = req.body;
+  const { meal, total_calories } = req.body;
 
   if (!dietid) {
     throw new BadRequestError("식단 아이디 필수");
@@ -612,10 +613,18 @@ export const createMeal = async (req: Request, res: Response) => {
     throw new BadRequestError("Meal 정보 필수");
   }
 
+  if (!total_calories) {
+    throw new BadRequestError("총 칼로리 필수");
+  }
+
   try {
     const dietId = new mongoose.Types.ObjectId(dietid);
 
+    // 새 Meal 생성
     const newMeal = await dietService.createMealAndAddToDiet(dietId, meal);
+
+    // 총 칼로리 수정
+    await dietService.updateDiet(dietId, { total_calories }, userId);
 
     res.status(201).json({
       success: true,
@@ -690,27 +699,23 @@ export const getDietById = async (req: Request, res: Response) => {
   }
 };
 
-// 식단 수정
-export const updateDietFeedbackById = async (req: Request, res: Response) => {
-  const user = req.user;
-  const { dietId, feedback } = req.body;
+// 식단 삭제
+export const deleteDietById = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid } = req.params;
 
-  if (!dietId) {
+  if (!dietid) {
     throw new BadRequestError("식단 아이디 필수");
   }
 
-  if (!feedback) {
-    throw new BadRequestError("피드백 필수");
-  }
-
-  const _id = new mongoose.Types.ObjectId(dietId);
   try {
-    await dietService.updateFeedback(_id, feedback, user._id);
+    const dietId = new mongoose.Types.ObjectId(dietid);
+    await dietService.deleteDietById(dietId, userId);
 
     res.status(200).json({
       success: true,
-      message: "식단 피드백 수정 성공",
-      code: "UPDATE_DIET_FEEDBACK_SUCCEEDED",
+      message: "식단 삭제 성공",
+      code: "DEIT_DELETION_SUCCEEDED",
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -718,23 +723,61 @@ export const updateDietFeedbackById = async (req: Request, res: Response) => {
   }
 };
 
-// 식단 삭제
-export const deleteDietById = async (req: Request, res: Response) => {
-  const user = req.user;
-  const { dietId } = req.body;
+// meal 삭제
+export const deleteMealById = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid, mealid } = req.params;
 
-  if (!dietId) {
-    throw new BadRequestError("식단 아이디 필수");
+  if (!dietid) {
+    throw new BadRequestError("Meal 아이디 필수");
   }
 
-  const _id = new mongoose.Types.ObjectId(dietId);
+  if (!mealid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
   try {
-    await dietService.deleteDietById(_id, user._id);
+    const dietId = new mongoose.Types.ObjectId(dietid);
+    const mealId = new mongoose.Types.ObjectId(mealid);
+
+    await dietService.deleteMealById(dietId, mealId, userId);
 
     res.status(200).json({
       success: true,
-      message: "식단 삭제 성공",
-      code: "DEIT_DELETION_SUCCEEDED",
+      message: "Meal 삭제 성공",
+      code: "MEAL_DELETION_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 음식 삭제
+export const deleteFoodById = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid, mealid, foodid } = req.params;
+
+  if (!dietid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
+
+  if (!mealid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
+
+  if (!foodid) {
+    throw new BadRequestError("음식 아이디 필수");
+  }
+
+  try {
+    const dietId = new mongoose.Types.ObjectId(dietid);
+    const foodId = new mongoose.Types.ObjectId(foodid);
+    await dietService.deleteFoodById(dietId, foodId, userId);
+
+    res.status(200).json({
+      success: true,
+      message: "음식 삭제 성공",
+      code: "FOOD_DELETION_SUCCEEDED",
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
@@ -758,6 +801,98 @@ export const getMeetingListByUserId = async (req: Request, res: Response) => {
         meetings,
       },
     });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// 식단 수정
+export const updateDietById = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid } = req.params;
+  const { diet } = req.body;
+
+  if (!dietid) {
+    throw new BadRequestError("식단 아이디 필수");
+  }
+
+  if (!diet) {
+    throw new BadRequestError("식단 필수");
+  }
+
+  const dietId = new mongoose.Types.ObjectId(dietid);
+  try {
+    await dietService.updateDiet(dietId, diet, userId);
+
+    res.status(200).json({
+      success: true,
+      message: "식단 피드백 수정 성공",
+      code: "UPDATE_DIET_FEEDBACK_SUCCEEDED",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    throw error;
+  }
+};
+
+// Meal 수정
+export const updateMeal = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid, mealid } = req.params;
+  const { meals, total_calories } = req.body;
+
+  console.log(userId);
+
+  if (!dietid) {
+    throw new BadRequestError("식단 아이디 필수");
+  }
+
+  if (!mealid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
+
+  if (!meals) {
+    throw new BadRequestError("식단 필수");
+  }
+
+  if (!total_calories) {
+    throw new BadRequestError("총 칼로리 필수");
+  }
+
+  try {
+  } catch (error) {
+    throw error;
+  }
+};
+
+// food 수정
+export const updateFood = async (req: Request, res: Response) => {
+  const userId = req.user._id;
+  const { dietid, mealid, foodid } = req.params;
+  const { foods, total_calories } = req.body;
+
+  console.log(userId);
+
+  if (!dietid) {
+    throw new BadRequestError("식단 아이디 필수");
+  }
+
+  if (!mealid) {
+    throw new BadRequestError("Meal 아이디 필수");
+  }
+
+  if (!foodid) {
+    throw new BadRequestError("음식 아이디 필수");
+  }
+
+  if (!foods) {
+    throw new BadRequestError("식단 필수");
+  }
+
+  if (!total_calories) {
+    throw new BadRequestError("총 칼로리 필수");
+  }
+  try {
   } catch (error) {
     throw error;
   }

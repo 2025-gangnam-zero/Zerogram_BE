@@ -6,7 +6,15 @@
     "description": "Zerogram API with Swagger"
   },
   "servers": [
-    { "url": "http://localhost:4000", "description": "Local server" }
+    { "url": "http://localhost:4000", "description": "Local server" },
+    {
+      "url": "https://staging.api.zerogram.example",
+      "description": "Staging server (example)"
+    },
+    {
+      "url": "https://api.zerogram.example",
+      "description": "Production server (example)"
+    }
   ],
   "tags": [
     { "name": "Auth", "description": "인증 관련 API" },
@@ -167,6 +175,7 @@
         "summary": "로그아웃",
         "operationId": "authLogout",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
         "responses": {
           "200": {
             "description": "로그아웃 성공",
@@ -217,6 +226,7 @@
         "summary": "내 정보 조회",
         "operationId": "getMyUserInfo",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
         "responses": {
           "200": {
             "description": "사용자 조회 성공",
@@ -261,6 +271,7 @@
         "summary": "내 정보 수정",
         "operationId": "updateMyUserInfo",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
         "requestBody": {
           "required": true,
           "content": {
@@ -317,6 +328,7 @@
         "summary": "내 계정 삭제",
         "operationId": "deleteMyUser",
         "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/SessionId" }],
         "responses": {
           "200": {
             "description": "사용자 삭제 성공",
@@ -352,6 +364,7 @@
         "operationId": "getMyWorkoutList",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "query",
             "name": "year",
@@ -421,6 +434,7 @@
         "operationId": "createMyWorkout",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "query",
             "name": "date",
@@ -487,6 +501,7 @@
         "operationId": "createWorkoutDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -578,6 +593,7 @@
         "operationId": "updateWorkout",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -674,6 +690,7 @@
         "operationId": "deleteWorkoutById",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -736,6 +753,7 @@
         "operationId": "addFitnessDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -843,6 +861,7 @@
         "operationId": "updateWorkoutDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -852,7 +871,7 @@
           },
           {
             "in": "path",
-            "name": "workoutdetailid",
+            "name": "detailid",
             "required": true,
             "schema": { "$ref": "#/components/schemas/_id" },
             "description": "운동일지 상세(WorkoutDetail) ID"
@@ -928,6 +947,7 @@
         "operationId": "deleteWorkoutDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "detailid",
@@ -998,6 +1018,7 @@
         "operationId": "updateFitnessDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "workoutid",
@@ -1090,6 +1111,7 @@
         "operationId": "deleteFitnessDetail",
         "security": [{ "bearerAuth": [] }],
         "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
           {
             "in": "path",
             "name": "fitnessdetailid",
@@ -1151,6 +1173,482 @@
           }
         }
       }
+    },
+
+    "/users/me/diets": {
+      "get": {
+        "tags": ["User"],
+        "summary": "내 식단 목록 조회 (연/월)",
+        "operationId": "getMyDietList",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "query",
+            "name": "year",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1970,
+              "example": 2025
+            },
+            "description": "조회할 연도(예: 2025)"
+          },
+          {
+            "in": "query",
+            "name": "month",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 1,
+              "maximum": 12,
+              "example": 9
+            },
+            "description": "조회할 월(1–12)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "사용자 식단 조회 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GetDietListResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(연/월 누락 또는 형식 에러)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["User"],
+        "summary": "내 식단 생성",
+        "operationId": "createMyDiet",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date",
+              "example": "2025-09-15"
+            },
+            "description": "식단 날짜 (YYYY-MM-DD)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DietCreateRequestDto" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "식단 생성 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateDietResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(날짜/상세 누락 또는 형식 오류)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "/users/me/diets/{dietid}": {
+      "post": {
+        "tags": ["User"],
+        "summary": "식단 일지에 Meal 추가",
+        "description": "특정 일일 식단(Diet)에 Meal을 추가합니다.",
+        "operationId": "createMeal",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "path",
+            "name": "dietid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "식단(Diet) ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateMealRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "일일 식단 상세(Meal) 추가 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateMealResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(식단 ID 또는 Meal 정보 누락)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "식단(Diet)을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User"],
+        "summary": "식단 삭제",
+        "operationId": "deleteDietById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "path",
+            "name": "dietid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "식단(Diet) ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "식단 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteDietResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "식단을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/diets/{dietid}/meals/{mealid}": {
+      "post": {
+        "tags": ["User"],
+        "summary": "Meal에 Food 목록 추가",
+        "description": "특정 Meal에 여러 Food 항목을 일괄 추가합니다.",
+        "operationId": "createFood",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "path",
+            "name": "dietid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "식단(Diet) ID (경로상 식별용)"
+          },
+          {
+            "in": "path",
+            "name": "mealid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "Meal ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateFoodsRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "음식 목록 추가 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CreateFoodsResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "잘못된 요청(Meal ID 또는 foods 누락)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Meal을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["User"],
+        "summary": "Meal 삭제",
+        "operationId": "deleteMealById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "path",
+            "name": "dietid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "식단(Diet) ID (경로상 식별용)"
+          },
+          {
+            "in": "path",
+            "name": "mealid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "Meal ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Meal 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteMealResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Meal을 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/users/me/diets/{dietid}/meals/{mealid}/foods/{foodid}": {
+      "delete": {
+        "tags": ["User"],
+        "summary": "Food 삭제",
+        "operationId": "deleteFoodById",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "$ref": "#/components/parameters/SessionId" },
+          {
+            "in": "path",
+            "name": "dietid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "식단(Diet) ID (경로상 식별용)"
+          },
+          {
+            "in": "path",
+            "name": "mealid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "Meal ID (경로상 식별용)"
+          },
+          {
+            "in": "path",
+            "name": "foodid",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/_id" },
+            "description": "Food ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "음식 삭제 성공",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DeleteFoodResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "인증 필요",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "403": {
+            "description": "삭제 권한 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "404": {
+            "description": "Food를 찾을 수 없음",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          },
+          "500": {
+            "description": "내부 서버 오류",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1159,6 +1657,19 @@
         "type": "http",
         "scheme": "bearer",
         "bearerFormat": "JWT"
+      }
+    },
+    "parameters": {
+      "SessionId": {
+        "in": "header",
+        "name": "X-Session-Id",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 24,
+          "example": "6650f1abcdef1234567890abcd"
+        },
+        "description": "세션 식별자(예: MongoDB ObjectId 문자열). 인증 미들웨어에서 사용."
       }
     },
     "schemas": {
@@ -1195,10 +1706,7 @@
         "pattern": "^[a-fA-F0-9]{24}$",
         "example": "6650f1abcdef1234567890"
       },
-      "WorkoutType": {
-        "type": "string",
-        "enum": ["running", "fitness"]
-      },
+      "WorkoutType": { "type": "string", "enum": ["running", "fitness"] },
       "Workout": {
         "type": "object",
         "properties": {
@@ -1310,7 +1818,10 @@
             "type": "object",
             "properties": {
               "user": { "$ref": "#/components/schemas/User" },
-              "sessionId": { "type": "string", "example": "a1b2c3d4e5f6" }
+              "sessionId": {
+                "type": "string",
+                "example": "6650f1abcdef1234567890abcd"
+              }
             }
           }
         }
@@ -1326,7 +1837,10 @@
             "type": "object",
             "properties": {
               "user": { "$ref": "#/components/schemas/User" },
-              "sessionId": { "type": "string", "example": "a1b2c3d4e5f6" }
+              "sessionId": {
+                "type": "string",
+                "example": "6650f1abcdef1234567890abcd"
+              }
             }
           }
         }
@@ -1399,7 +1913,6 @@
           "timestamp": { "type": "string", "format": "date-time" }
         }
       },
-
       "FitnessDetailDto": {
         "type": "object",
         "properties": {
@@ -1413,7 +1926,6 @@
           "updatedAt": { "type": "string", "format": "date-time" }
         }
       },
-
       "WorkoutDetailDto": {
         "type": "object",
         "properties": {
@@ -1440,7 +1952,6 @@
           "fitnessDetails"
         ]
       },
-
       "WorkoutResponseDto": {
         "type": "object",
         "properties": {
@@ -1456,15 +1967,11 @@
         },
         "required": ["date", "userId", "details"]
       },
-
       "WorkoutUpdateRequestDto": {
         "type": "object",
-        "properties": {
-          "date": { "type": "string", "format": "date" }
-        },
+        "properties": { "date": { "type": "string", "format": "date" } },
         "additionalProperties": false
       },
-
       "WorkoutDetailUpdateRequestDto": {
         "type": "object",
         "properties": {
@@ -1476,7 +1983,6 @@
         },
         "additionalProperties": false
       },
-
       "FitnessDetailUpdateRequestDto": {
         "type": "object",
         "properties": {
@@ -1488,7 +1994,6 @@
         },
         "additionalProperties": false
       },
-
       "FitnessDetailCreateDto": {
         "type": "object",
         "properties": {
@@ -1546,11 +2051,9 @@
           "fitnessDetails"
         ]
       },
-      "WorkoutCreateDto": {
+      "WorkoutCreateRequest": {
         "type": "object",
         "properties": {
-          "userId": { "$ref": "#/components/schemas/_id" },
-          "date": { "type": "string", "format": "date" },
           "details": {
             "type": "array",
             "items": {
@@ -1558,7 +2061,40 @@
             }
           }
         },
-        "required": ["userId", "date", "details"]
+        "required": ["details"]
+      },
+      "GetWorkoutListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "운동일지 목록 조회 성공" },
+          "code": { "type": "string", "example": "GET_WORKOUTS_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "items": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/WorkoutResponseDto" }
+              }
+            }
+          }
+        }
+      },
+      "CreateWorkoutResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "운동일지 생성 성공" },
+          "code": { "type": "string", "example": "WORKOUT_CREATION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "workout": { "$ref": "#/components/schemas/WorkoutResponseDto" }
+            }
+          }
+        }
       },
       "DeleteWorkoutResponse": {
         "type": "object",
@@ -1625,6 +2161,196 @@
           "success": { "type": "boolean", "example": true },
           "message": { "type": "string", "example": "피트니스 삭제 성공" },
           "code": { "type": "string", "example": "FITNESS_DELETION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "MealType": {
+        "type": "string",
+        "description": "식사 타입",
+        "enum": ["breakfast", "lunch", "dinner", "snack"],
+        "example": "lunch"
+      },
+      "Food": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "mealId": { "$ref": "#/components/schemas/_id" },
+          "food_name": { "type": "string", "example": "토스트(식빵)" },
+          "food_amount": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "example": 1
+          }
+        },
+        "required": ["mealId", "food_name"]
+      },
+      "FoodCreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "food_name": { "type": "string", "example": "토스트(식빵)" },
+          "food_amount": {
+            "type": "number",
+            "format": "float",
+            "nullable": true,
+            "example": 1
+          }
+        },
+        "required": ["food_name"]
+      },
+      "Meal": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "dietId": { "$ref": "#/components/schemas/_id" },
+          "meal_type": { "$ref": "#/components/schemas/MealType" },
+          "foods": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Food" }
+          }
+        },
+        "required": ["dietId", "meal_type", "foods"]
+      },
+      "MealCreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "dietId": { "$ref": "#/components/schemas/_id" },
+          "meal_type": { "$ref": "#/components/schemas/MealType" },
+          "foods": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/FoodCreateRequestDto" }
+          }
+        },
+        "required": ["dietId", "meal_type", "foods"]
+      },
+      "Diet": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "userId": { "$ref": "#/components/schemas/_id" },
+          "meals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Meal" }
+          },
+          "total_calories": {
+            "type": "number",
+            "format": "float",
+            "example": 1234.5
+          },
+          "feedback": {
+            "type": "string",
+            "nullable": true,
+            "example": "탄단지 균형 양호"
+          },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-09-15"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "meals", "total_calories", "date"]
+      },
+      "DietCreateRequestDto": {
+        "type": "object",
+        "properties": {
+          "meals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/MealCreateRequestDto" }
+          },
+          "total_calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string" },
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-09-15"
+          }
+        },
+        "required": ["meals", "total_calories", "date"]
+      },
+      "DietCreateResponseDto": {
+        "type": "object",
+        "properties": {
+          "_id": { "$ref": "#/components/schemas/_id" },
+          "userId": { "$ref": "#/components/schemas/_id" },
+          "meals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Meal" }
+          },
+          "total_calories": { "type": "number", "format": "float" },
+          "feedback": { "type": "string", "nullable": true },
+          "date": { "type": "string", "format": "date" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": [
+          "_id",
+          "userId",
+          "meals",
+          "total_calories",
+          "date",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "GetDietListResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "사용자 식단 조회 성공" },
+          "code": { "type": "string", "example": "DIET_LIST_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "diets": {
+                "type": "array",
+                "items": { "$ref": "#/components/schemas/Diet" }
+              }
+            }
+          }
+        }
+      },
+      "CreateDietResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "식단 생성 성공" },
+          "code": { "type": "string", "example": "DIET_CREATION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "data": {
+            "type": "object",
+            "properties": {
+              "diet": { "$ref": "#/components/schemas/DietCreateResponseDto" }
+            }
+          }
+        }
+      },
+      "DeleteDietResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "식단 삭제 성공" },
+          "code": { "type": "string", "example": "DIET_DELETION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DeleteMealResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "Meal 삭제 성공" },
+          "code": { "type": "string", "example": "MEAL_DELETION_SUCCEEDED" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      },
+      "DeleteFoodResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "message": { "type": "string", "example": "음식 삭제 성공" },
+          "code": { "type": "string", "example": "FOOD_DELETION_SUCCEEDED" },
           "timestamp": { "type": "string", "format": "date-time" }
         }
       }

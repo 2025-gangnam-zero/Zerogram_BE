@@ -8,7 +8,9 @@ import {
 import {
   DietCreateDto,
   DietCreateResponseDto,
+  DietUpdateRequestDto,
   FoodCreateDto,
+  FoodUpdateRequestDto,
   MealCreateDto,
   MealCreateRequestDto,
 } from "../dtos";
@@ -175,21 +177,18 @@ class DietRepository {
     }
   }
 
-  // feedback 작성
-  async updateDietFeedback(
-    _id: Types.ObjectId,
-    feedback: string
-  ): Promise<UpdateResult> {
+  // 식단 일지 삭제
+  async deleteDiet(_id: Types.ObjectId): Promise<DeleteResult> {
     try {
-      const result = await Diet.updateOne({ _id }, { feedback });
+      const result = await Diet.deleteOne({ _id });
 
       return result;
     } catch (error) {
-      throw mongoDBErrorHandler("updateFeedback", error);
+      throw mongoDBErrorHandler("deleteDiet", error);
     }
   }
 
-  // 식단 삭제
+  // 식단 meal 삭제
   async deleteMeal(_id: Types.ObjectId): Promise<DeleteResult> {
     try {
       const result = await Meal.deleteOne({ _id });
@@ -200,28 +199,71 @@ class DietRepository {
     }
   }
 
-  // 식단 수정하기
-  async updateMeal(
-    _id: Types.ObjectId,
-    updatedMeal: MealCreateRequestDto
-  ): Promise<UpdateResult> {
+  // 음식 삭제
+  async deleteFood(foodId: Types.ObjectId): Promise<DeleteResult> {
     try {
-      const result = await Meal.updateOne({ _id }, updatedMeal);
+      const result = await Food.deleteOne({ _id: foodId });
 
       return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteMeal", error);
+    }
+  }
+
+  // 식단 수정
+  async updateDiet(
+    _id: Types.ObjectId,
+    updatedDiet: DietUpdateRequestDto,
+    session?: ClientSession
+  ): Promise<DietState | null> {
+    try {
+      const diet = await Diet.findOneAndUpdate({ _id }, updatedDiet, {
+        new: true,
+        lean: true,
+        session,
+      });
+
+      return diet;
+    } catch (error) {
+      throw mongoDBErrorHandler("updateFeedback", error);
+    }
+  }
+
+  // Meal 수정하기
+  async updateMeal(
+    _id: Types.ObjectId,
+    updatedMeal: MealCreateRequestDto,
+    session?: ClientSession
+  ): Promise<MealState | null> {
+    try {
+      const meal = await Meal.findOneAndUpdate({ _id }, updatedMeal, {
+        new: true,
+        lean: true,
+        session,
+      });
+
+      return meal;
     } catch (error) {
       throw mongoDBErrorHandler("updateMeal", error);
     }
   }
 
-  // 식단 일지 삭제
-  async deleteDiet(_id: Types.ObjectId): Promise<DeleteResult> {
+  // 음식 수정
+  async updateFood(
+    foodId: Types.ObjectId,
+    updateFood: FoodUpdateRequestDto,
+    session?: ClientSession
+  ): Promise<FoodState | null> {
     try {
-      const result = await Diet.deleteOne({ _id });
+      const food = await Food.findOneAndUpdate({ _id: foodId }, updateFood, {
+        new: true,
+        lean: true,
+        session,
+      });
 
-      return result;
+      return food;
     } catch (error) {
-      throw mongoDBErrorHandler("deleteDiet", error);
+      throw mongoDBErrorHandler("updateFood", error);
     }
   }
 }
