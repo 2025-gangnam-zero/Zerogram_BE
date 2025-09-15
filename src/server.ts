@@ -8,6 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./docs/swagger.json";
 import { CLIENT_URL, PORT } from "./constants";
 import http from "http";
+import { initSocket } from "./socket";
 
 const env = process.env.NODE_ENV || "local";
 
@@ -39,6 +40,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/", routes());
+
+initSocket(server);
 
 mongoose.Promise = Promise;
 
