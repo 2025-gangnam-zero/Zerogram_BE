@@ -2,7 +2,9 @@ import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 import { Diet, Food, Meal } from "../models";
 import { DietState, FoodState, MealState } from "../types";
 import {
+  aggregateGetDietById,
   aggregateGetDietListByUserIdForMonth,
+  aggregateGetMealById,
   mongoDBErrorHandler,
 } from "../utils";
 import {
@@ -10,9 +12,10 @@ import {
   DietCreateResponseDto,
   DietUpdateRequestDto,
   FoodCreateDto,
-  FoodUpdateRequestDto,
+  FoodUpdateDto,
   MealCreateDto,
-  MealCreateRequestDto,
+  MealResponseDto,
+  MealUpdateDto,
 } from "../dtos";
 
 class DietRepository {
@@ -36,13 +39,50 @@ class DietRepository {
   }
 
   // 식단 일지 조회
-  async getDietById(_id: Types.ObjectId): Promise<DietState | null> {
+  async getDietById(
+    _id: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DietCreateResponseDto | null> {
     try {
-      const diet = await Diet.findById({ _id });
+      const diet = await aggregateGetDietById(_id, session);
 
       return diet;
     } catch (error) {
       throw mongoDBErrorHandler("getDietById", error);
+    }
+  }
+
+  // 식단 일지 document 조회
+  async getDietDocumentById(
+    dietId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DietState | null> {
+    try {
+      return await Diet.findById({ _id: dietId }, { session }).lean();
+    } catch (error) {
+      throw mongoDBErrorHandler("getDietDocumentById", error);
+    }
+  }
+
+  // Meal 조회
+  async getMealById(mealId: Types.ObjectId): Promise<MealResponseDto | null> {
+    try {
+      const meal = await aggregateGetMealById(mealId);
+
+      return meal;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 음식 조회
+  async getFoodById(foodId: Types.ObjectId): Promise<FoodState | null> {
+    try {
+      const food = await Food.findById({ _id: foodId }).lean();
+
+      return food;
+    } catch (error) {
+      throw mongoDBErrorHandler("getFoodById", error);
     }
   }
 
@@ -177,6 +217,38 @@ class DietRepository {
     }
   }
 
+  // 음식 일괄 삭제
+  async deleteFoods(foodIds: Types.ObjectId[], session?: ClientSession) {
+    try {
+      const result = await Food.deleteMany(
+        {
+          _id: { $in: foodIds },
+        },
+        { session }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteFoods", error);
+    }
+  }
+
+  // Meal 일괄 삭제
+  async deleteMeals(mealIds: Types.ObjectId[], session?: ClientSession) {
+    try {
+      const result = await Meal.deleteMany(
+        {
+          _id: { $in: mealIds },
+        },
+        { session }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteMeals", error);
+    }
+  }
+
   // 식단 일지 삭제
   async deleteDiet(_id: Types.ObjectId): Promise<DeleteResult> {
     try {
@@ -217,11 +289,15 @@ class DietRepository {
     session?: ClientSession
   ): Promise<DietState | null> {
     try {
-      const diet = await Diet.findOneAndUpdate({ _id }, updatedDiet, {
-        new: true,
-        lean: true,
-        session,
-      });
+      const diet = await Diet.findOneAndUpdate(
+        { _id },
+        { $set: updatedDiet },
+        {
+          new: true,
+          lean: true,
+          session,
+        }
+      );
 
       return diet;
     } catch (error) {
@@ -231,16 +307,22 @@ class DietRepository {
 
   // Meal 수정하기
   async updateMeal(
-    _id: Types.ObjectId,
-    updatedMeal: MealCreateRequestDto,
+    mealId: Types.ObjectId,
+    updatedMeal: MealUpdateDto,
     session?: ClientSession
   ): Promise<MealState | null> {
     try {
-      const meal = await Meal.findOneAndUpdate({ _id }, updatedMeal, {
-        new: true,
-        lean: true,
-        session,
-      });
+      console.log("updatedMeal", updatedMeal);
+
+      const meal = await Meal.findOneAndUpdate(
+        { _id: mealId },
+        { $set: updatedMeal },
+        {
+          new: true,
+          lean: true,
+          session,
+        }
+      );
 
       return meal;
     } catch (error) {
@@ -251,15 +333,19 @@ class DietRepository {
   // 음식 수정
   async updateFood(
     foodId: Types.ObjectId,
-    updateFood: FoodUpdateRequestDto,
+    updateFood: FoodUpdateDto,
     session?: ClientSession
   ): Promise<FoodState | null> {
     try {
-      const food = await Food.findOneAndUpdate({ _id: foodId }, updateFood, {
-        new: true,
-        lean: true,
-        session,
-      });
+      const food = await Food.findOneAndUpdate(
+        { _id: foodId },
+        { $set: updateFood },
+        {
+          new: true,
+          lean: true,
+          session,
+        }
+      );
 
       return food;
     } catch (error) {

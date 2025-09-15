@@ -5,7 +5,7 @@ import {
   UnauthorizedError,
 } from "../errors";
 import { dietRepository } from "../repositories";
-import { DietState, MealState } from "../types";
+import { DietState, FoodState, MealState } from "../types";
 import {
   DietCreateRequestDto,
   DietCreateDto,
@@ -13,8 +13,11 @@ import {
   MealCreateRequestDto,
   MealCreateDto,
   DietCreateResponseDto,
+  MealUpdateRequestDto,
   DietUpdateRequestDto,
-} from "dtos";
+  MealResponseDto,
+  FoodUpdateDto,
+} from "../dtos";
 
 class DietService {
   // 사용자 일일 식단 목록 조회
@@ -271,20 +274,69 @@ class DietService {
   // 일일 식단 조회
   async getDietById(
     dietId: Types.ObjectId,
-    userId: Types.ObjectId
-  ): Promise<DietState> {
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DietCreateResponseDto> {
     try {
-      const diet = await dietRepository.getDietById(dietId);
+      const diet = await dietRepository.getDietById(dietId, session);
 
       if (!diet) {
         throw new NotFoundError("일일 식단 조회 실패");
       }
 
-      if (diet.userId !== userId) {
+      if (String(diet.userId) !== String(userId)) {
         throw new UnauthorizedError("권한 없음");
       }
 
       return diet;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 일일 식단 doc 조회
+  async getDietDocById(
+    dietId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DietState> {
+    try {
+      const dietDoc = await dietRepository.getDietDocumentById(dietId, session);
+
+      if (!dietDoc) {
+        throw new NotFoundError("식단 doc 조회 실패");
+      }
+
+      return dietDoc;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Meal 조회
+  async getMealById(mealId: Types.ObjectId): Promise<MealResponseDto> {
+    try {
+      const meal = await dietRepository.getMealById(mealId);
+
+      if (!meal) {
+        throw new InternalServerError("Meal 조회 실패");
+      }
+
+      return meal;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 음식 조회
+  async getFoodById(foodId: Types.ObjectId): Promise<FoodState> {
+    try {
+      const food = await dietRepository.getFoodById(foodId);
+
+      if (!food) {
+        throw new InternalServerError("음식 조회 실패");
+      }
+
+      return food;
     } catch (error) {
       throw error;
     }
@@ -296,7 +348,13 @@ class DietService {
     userId: Types.ObjectId
   ): Promise<void> {
     try {
-      await this.getDietById(dietId, userId);
+      const { meals } = await this.getDietById(dietId, userId);
+
+      const mealIds = meals.map((m) => m._id);
+
+      await Promise.all(
+        mealIds.map((mealId) => this.deleteMealById(dietId, mealId, userId))
+      );
 
       const result = await dietRepository.deleteDiet(dietId);
 
@@ -320,7 +378,13 @@ class DietService {
   ) {
     try {
       // diet 조회
-      await this.getDietById(dietId, userId);
+      const { foods } = await this.getMealById(mealId);
+
+      const foodIds = foods.map((f) => f._id);
+
+      await Promise.all(
+        foodIds.map((fId) => this.deleteFoodById(dietId, fId, userId))
+      );
 
       const result = await dietRepository.deleteMeal(mealId);
 
@@ -362,27 +426,92 @@ class DietService {
   // 식단 수정
   async updateDiet(
     dietId: Types.ObjectId,
-    updatedDiet: DietUpdateRequestDto,
+    updateDiet: DietUpdateRequestDto,
     userId: Types.ObjectId
-  ): Promise<DietState> {
+  ): Promise<DietCreateResponseDto> {
     try {
       // 식단 조회 및 권한 확인
       await this.getDietById(dietId, userId);
 
-      const diet = await dietRepository.updateDiet(dietId, updatedDiet);
+      const { meals, ...rest } = updateDiet;
+
+      // 식단 수정
+      const diet = await dietRepository.updateDiet(dietId, rest);
 
       if (!diet) {
         throw new InternalServerError("식단 수정 실패");
       }
 
-      return diet;
+      if (meals) {
+        // meal 수정
+        const updatedMeals = await Promise.all(
+          meals.map((meal) => this.updateMeal(meal))
+        );
+
+        // 수정된 meals 포함 응답
+        return {
+          ...diet,
+          meals: updatedMeals,
+        };
+      }
+
+      // 수정된 diet 응답
+      return await this.getDietById(dietId, userId);
     } catch (error) {
       throw error;
     }
   }
 
-  // meals 수정
-  async updateMeals(dietId: Types.ObjectId,) {}
+  // meal 수정
+  async updateMeal(updateMeal: MealUpdateRequestDto): Promise<MealResponseDto> {
+    try {
+      const { foods, _id: mealId, ...rest } = updateMeal;
+
+      const meal = await dietRepository.updateMeal(mealId, rest);
+
+      console.log(meal);
+      if (!meal) {
+        throw new InternalServerError("Meal 수정 실패");
+      }
+
+      if (foods) {
+        // 음식 수정
+        const updatedFoods = await Promise.all(
+          foods.map((food) => {
+            const { _id, ...rest } = food;
+            return this.updateFood(_id, rest);
+          })
+        );
+
+        return {
+          ...meal,
+          foods: updatedFoods,
+        };
+      }
+
+      return await this.getMealById(mealId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 음식 수정
+  async updateFood(
+    foodId: Types.ObjectId,
+    updatedFood: FoodUpdateDto
+  ): Promise<FoodState> {
+    try {
+      const food = await dietRepository.updateFood(foodId, updatedFood);
+
+      if (!food) {
+        throw new InternalServerError("음식 수정 실패");
+      }
+
+      return food;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new DietService();
