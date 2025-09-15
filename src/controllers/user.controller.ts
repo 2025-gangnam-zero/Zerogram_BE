@@ -812,6 +812,12 @@ export const updateDietById = async (req: Request, res: Response) => {
   const { dietid } = req.params;
   const { diet } = req.body;
 
+  console.log("수정 요청", req.body.diet.meals);
+  console.log(
+    "수정 요청",
+    req.body.diet.meals.map((m: any) => m.foods)
+  );
+
   if (!dietid) {
     throw new BadRequestError("식단 아이디 필수");
   }
@@ -822,13 +828,16 @@ export const updateDietById = async (req: Request, res: Response) => {
 
   const dietId = new mongoose.Types.ObjectId(dietid);
   try {
-    await dietService.updateDiet(dietId, diet, userId);
+    const newDiet = await dietService.updateDiet(dietId, diet, userId);
 
     res.status(200).json({
       success: true,
       message: "식단 피드백 수정 성공",
       code: "UPDATE_DIET_FEEDBACK_SUCCEEDED",
       timestamp: new Date().toISOString(),
+      data: {
+        diet: newDiet,
+      },
     });
   } catch (error) {
     throw error;
