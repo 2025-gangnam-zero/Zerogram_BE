@@ -313,7 +313,10 @@ class DietService {
   }
 
   // Meal 조회
-  async getMealById(mealId: Types.ObjectId): Promise<MealResponseDto> {
+  async getMealById(
+    mealId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<MealResponseDto> {
     try {
       const meal = await dietRepository.getMealById(mealId);
 
@@ -348,12 +351,18 @@ class DietService {
     userId: Types.ObjectId
   ): Promise<void> {
     try {
-      const { meals } = await this.getDietById(dietId, userId);
+      const session = await mongoose.startSession();
+
+      session.startTransaction();
+
+      const { meals } = await this.getDietById(dietId, userId, session);
 
       const mealIds = meals.map((m) => m._id);
 
       await Promise.all(
-        mealIds.map((mealId) => this.deleteMealById(dietId, mealId, userId))
+        mealIds.map((mealId) =>
+          this.deleteMealById(dietId, mealId, userId, session)
+        )
       );
 
       const result = await dietRepository.deleteDiet(dietId);
@@ -374,16 +383,17 @@ class DietService {
   async deleteMealById(
     dietId: Types.ObjectId,
     mealId: Types.ObjectId,
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
+    session?: ClientSession
   ) {
     try {
       // diet 조회
-      const { foods } = await this.getMealById(mealId);
+      const { foods } = await this.getMealById(mealId, session);
 
       const foodIds = foods.map((f) => f._id);
 
       await Promise.all(
-        foodIds.map((fId) => this.deleteFoodById(dietId, fId, userId))
+        foodIds.map((fId) => this.deleteFoodById(dietId, fId, userId, session))
       );
 
       const result = await dietRepository.deleteMeal(mealId);
@@ -404,12 +414,13 @@ class DietService {
   async deleteFoodById(
     dietId: Types.ObjectId,
     foodId: Types.ObjectId,
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
+    session?: ClientSession
   ) {
     try {
-      await this.getDietById(dietId, userId);
+      await this.getDietById(dietId, userId, session);
 
-      const result = await dietRepository.deleteFood(foodId);
+      const result = await dietRepository.deleteFood(foodId, session);
 
       if (!result.acknowledged) {
         throw new InternalServerError("음식 삭제 승인 실패");

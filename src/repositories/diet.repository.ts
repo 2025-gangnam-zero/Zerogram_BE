@@ -65,9 +65,12 @@ class DietRepository {
   }
 
   // Meal 조회
-  async getMealById(mealId: Types.ObjectId): Promise<MealResponseDto | null> {
+  async getMealById(
+    mealId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<MealResponseDto | null> {
     try {
-      const meal = await aggregateGetMealById(mealId);
+      const meal = await aggregateGetMealById(mealId, session);
 
       return meal;
     } catch (error) {
@@ -261,9 +264,12 @@ class DietRepository {
   }
 
   // 식단 meal 삭제
-  async deleteMeal(_id: Types.ObjectId): Promise<DeleteResult> {
+  async deleteMeal(
+    _id: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
     try {
-      const result = await Meal.deleteOne({ _id });
+      const result = await Meal.deleteOne({ _id }, { session });
 
       return result;
     } catch (error) {
@@ -272,9 +278,12 @@ class DietRepository {
   }
 
   // 음식 삭제
-  async deleteFood(foodId: Types.ObjectId): Promise<DeleteResult> {
+  async deleteFood(
+    foodId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
     try {
-      const result = await Food.deleteOne({ _id: foodId });
+      const result = await Food.deleteOne({ _id: foodId }, { session });
 
       return result;
     } catch (error) {
