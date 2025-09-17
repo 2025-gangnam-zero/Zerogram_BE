@@ -31,3 +31,17 @@ export interface MessageState {
   editedAt?: Date | null;
   deletedAt?: Date | null;
 }
+
+export type MessageDto = {
+  id: string;
+  clientMessageId?: string;
+  roomId: string;
+  seq: number;
+  author: { id: string; name: string; avatarUrl?: string };
+  type: "text" | "system.notice" | "image" | "file";
+  content?: string | null;
+  attachments?: Attachment[] | null;
+  createdAt: string;
+  editedAt?: string | null;
+  deletedAt?: string | null;
+};

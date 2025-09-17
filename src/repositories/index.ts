@@ -5,6 +5,7 @@ import userSessionRepository from "./user-session.repository";
 import workoutRepository from "./workout.repository";
 import roomRepository from "./room.repository";
 import roomMembershipRepository from "./roomMembership.repository";
+import messageRepository from "./message.repository";
 
 export {
   dietRepository,
@@ -14,4 +15,5 @@ export {
   workoutRepository,
   roomRepository,
   roomMembershipRepository,
+  messageRepository,
 };

@@ -183,6 +183,25 @@ export class RoomRepository {
       throw mongoDBErrorHandler("rooms.deleteById", error);
     }
   }
+
+  async getCurrentSeq(roomId: Types.ObjectId) {
+    const doc = await Room.findById(roomId).select({ seqCounter: 1 }).lean();
+    return doc?.seqCounter ?? 0;
+  }
+
+  // 트랜잭션 내에서 사용: seqCounter +1 하고 lastMessage/lastMessageAt도 필요시 갱신
+  async incSeqAndTouch(
+    roomId: Types.ObjectId,
+    lastMessagePreview: string | null,
+    session: any
+  ) {
+    const now = new Date();
+    const update: any = { $inc: { seqCounter: 1 } };
+    if (lastMessagePreview != null) {
+      update.$set = { lastMessage: lastMessagePreview, lastMessageAt: now };
+    }
+    return Room.findByIdAndUpdate(roomId, update, { new: true, session });
+  }
 }
 
 export default new RoomRepository();

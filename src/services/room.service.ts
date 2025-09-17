@@ -369,6 +369,11 @@ export class RoomsService {
       session.endSession();
     }
   }
+
+  async getCurrentSeq(roomId: string) {
+    const roomid = new Types.ObjectId(roomId);
+    return roomRepository.getCurrentSeq(roomid);
+  }
 }
 
 export default new RoomsService();

@@ -136,6 +136,31 @@ export class RoomMembershipRepository {
       throw mongoDBErrorHandler("roomMembership.deactivateMembership", error);
     }
   }
+
+  async getActiveMemberIds(roomId: Types.ObjectId): Promise<string[]> {
+    const rows = await RoomMembership.find({
+      roomId,
+      leftAt: null,
+    })
+      .select({ userId: 1 })
+      .lean();
+    return rows.map((r) => String(r.userId));
+  }
+
+  async updateLastReadSeq(
+    roomId: Types.ObjectId,
+    userId: Types.ObjectId,
+    lastReadSeq: number
+  ) {
+    const now = new Date();
+    await RoomMembership.updateOne(
+      {
+        roomId,
+        userId,
+      },
+      { $set: { lastReadSeq, lastReadAt: now } }
+    );
+  }
 }
 
 export default new RoomMembershipRepository();
