@@ -112,15 +112,19 @@ export default () => {
   );
 
   // --------------------------------------------------------------------------
-
+  // 사용자의 한 달간 식단 일지 조회
   router.get("/users/me/diets", authChecker, getDietListById);
+
   // 식단 일지 생성
   router.post("/users/me/diets", authChecker, createDiet);
-  // 식단 일지 meal 생성
-  router.post("/users/me/diets/:dietid/", authChecker, createMeal);
-  // 식단 일지 food 생성
+
+  // 식단 일지 meal 생성 + 추가
+  router.post("/users/me/diets/:dietid", authChecker, createMeal);
+
+  // 식단 일지 food 생성 + 추가
   router.post("/users/me/diets/:dietid/meals/:mealid", authChecker, createFood);
 
+  // 개별 식단 일지 조회 => 사용 안함
   router.get("/users/me/diets/:dietid", authChecker, getDietById);
 
   // 식단 수정

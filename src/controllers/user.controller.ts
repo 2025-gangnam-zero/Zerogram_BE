@@ -603,13 +603,16 @@ export const createDiet = async (req: Request, res: Response) => {
 export const createMeal = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { dietid } = req.params;
-  const { meal, total_calories } = req.body;
+  const { meals, total_calories } = req.body;
+
+  console.log(dietid);
+  console.log("식단 상세", meals, "총 칼로리", total_calories);
 
   if (!dietid) {
     throw new BadRequestError("식단 아이디 필수");
   }
 
-  if (!meal) {
+  if (!meals) {
     throw new BadRequestError("Meal 정보 필수");
   }
 
@@ -620,11 +623,16 @@ export const createMeal = async (req: Request, res: Response) => {
   try {
     const dietId = new mongoose.Types.ObjectId(dietid);
 
-    // 새 Meal 생성
-    const newMeal = await dietService.createMealAndAddToDiet(dietId, meal);
+    // 새 Meal 생성 및 total_calories 업데이트
+    const newMeals =
+      await dietService.createMealsAndAddtoDietAndUpdateTotalCalories(
+        dietId,
+        meals,
+        total_calories,
+        userId
+      );
 
-    // 총 칼로리 수정
-    await dietService.updateDiet(dietId, { total_calories }, userId);
+    console.log(newMeals);
 
     res.status(201).json({
       success: true,
@@ -632,7 +640,8 @@ export const createMeal = async (req: Request, res: Response) => {
       code: "DIET_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        meal: newMeal,
+        meals: newMeals,
+        total_calories,
       },
     });
   } catch (error) {

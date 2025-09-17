@@ -145,6 +145,8 @@ class DietService {
         throw new InternalServerError("식단 상세 추가 실패");
       }
 
+      console.log(diet);
+
       return diet;
     } catch (error) {
       throw error;
@@ -232,19 +234,58 @@ class DietService {
   // 식단에 meal 추가
   async createMealAndAddToDiet(
     dietId: Types.ObjectId,
-    meal: MealCreateRequestDto,
+    meals: MealCreateRequestDto[],
     session?: ClientSession
   ) {
     try {
       // Meal과 food 생성
-      const newMeal = await this.createMealAndFood(meal, session);
+      const newMeals = await Promise.all(
+        meals.map((meal) =>
+          this.createMealAndFood({ ...meal, dietId }, session)
+        )
+      );
 
-      // meal을 diet에 추가
-      await this.addMealsToDiet(dietId, [newMeal._id], session);
+      console.log("새로 생성된 Meals", newMeals);
+      const mealIds = newMeals.map((m) => m._id);
 
-      return newMeal;
+      console.log("mealIds", mealIds);
+
+      await this.addMealsToDiet(dietId, mealIds, session);
+
+      return newMeals;
     } catch (error) {
       throw error;
+    }
+  }
+
+  async createMealsAndAddtoDietAndUpdateTotalCalories(
+    dietId: Types.ObjectId,
+    meals: MealCreateRequestDto[],
+    total_calories: number,
+    userId: Types.ObjectId
+  ) {
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
+    try {
+      // meals 목록 생성
+      const newMeals = await this.createMealAndAddToDiet(
+        dietId,
+        meals,
+        session
+      );
+
+      // 총 칼로리 업데이트
+      await this.updateDiet(dietId, { total_calories }, userId, session);
+
+      await session.commitTransaction();
+
+      return newMeals;
+    } catch (error) {
+      session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
   }
 
@@ -438,16 +479,17 @@ class DietService {
   async updateDiet(
     dietId: Types.ObjectId,
     updateDiet: DietUpdateRequestDto,
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
+    session?: ClientSession
   ): Promise<DietCreateResponseDto> {
     try {
       // 식단 조회 및 권한 확인
-      await this.getDietById(dietId, userId);
+      await this.getDietById(dietId, userId, session);
 
       const { meals, ...rest } = updateDiet;
 
       // 식단 수정
-      const diet = await dietRepository.updateDiet(dietId, rest);
+      const diet = await dietRepository.updateDiet(dietId, rest, session);
 
       if (!diet) {
         throw new InternalServerError("식단 수정 실패");
@@ -456,7 +498,7 @@ class DietService {
       if (meals) {
         // meal 수정
         const updatedMeals = await Promise.all(
-          meals.map((meal) => this.updateMeal(meal))
+          meals.map((meal) => this.updateMeal(meal, session))
         );
 
         // 수정된 meals 포함 응답
@@ -474,11 +516,14 @@ class DietService {
   }
 
   // meal 수정
-  async updateMeal(updateMeal: MealUpdateRequestDto): Promise<MealResponseDto> {
+  async updateMeal(
+    updateMeal: MealUpdateRequestDto,
+    session?: ClientSession
+  ): Promise<MealResponseDto> {
     try {
       const { foods, _id: mealId, ...rest } = updateMeal;
 
-      const meal = await dietRepository.updateMeal(mealId, rest);
+      const meal = await dietRepository.updateMeal(mealId, rest, session);
 
       console.log(meal);
       if (!meal) {
@@ -490,7 +535,7 @@ class DietService {
         const updatedFoods = await Promise.all(
           foods.map((food) => {
             const { _id, ...rest } = food;
-            return this.updateFood(_id, rest);
+            return this.updateFood(_id, rest, session);
           })
         );
 
@@ -509,10 +554,15 @@ class DietService {
   // 음식 수정
   async updateFood(
     foodId: Types.ObjectId,
-    updatedFood: FoodUpdateDto
+    updatedFood: FoodUpdateDto,
+    session?: ClientSession
   ): Promise<FoodState> {
     try {
-      const food = await dietRepository.updateFood(foodId, updatedFood);
+      const food = await dietRepository.updateFood(
+        foodId,
+        updatedFood,
+        session
+      );
 
       if (!food) {
         throw new InternalServerError("음식 수정 실패");

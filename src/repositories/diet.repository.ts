@@ -173,6 +173,7 @@ class DietRepository {
     session?: ClientSession
   ): Promise<DietState | null> {
     try {
+      console.log(dietId);
       const diet = await Diet.findOneAndUpdate(
         { _id: dietId },
         {
