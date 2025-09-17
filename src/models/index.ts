@@ -6,3 +6,5 @@ export * from "./user-session.model";
 export * from "./room.model";
 export * from "./roomMembership.model";
 export * from "./message.model";
+export * from "./messageReaction.model";
+export * from "./chatNotification.model";

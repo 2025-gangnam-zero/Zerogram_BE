@@ -6,3 +6,4 @@ export * from "./s3";
 export * from "./aggregates";
 export * from "./cursors";
 export * from "./numbers";
+export * from "./mappers";

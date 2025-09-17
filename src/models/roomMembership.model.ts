@@ -1,31 +1,5 @@
-import { Schema, model, Types } from "mongoose";
-
-export type RoomRole = "owner" | "admin" | "member";
-
-export interface RoomMembershipState {
-  _id: Types.ObjectId;
-
-  roomId: Types.ObjectId;
-  userId: Types.ObjectId;
-
-  role: RoomRole;
-
-  joinedAt: Date;
-  leftAt?: Date | null;
-
-  /** 읽음 포인터(시각/메시지Id/시퀀스 중 선택/병행 가능) */
-  lastReadAt?: Date | null;
-  lastReadMessageId?: Types.ObjectId | null;
-  lastReadSeq?: number | null;
-
-  /** 사용자별 개인 설정 */
-  isPinned: boolean;
-  isMuted: boolean;
-  nicknameInRoom?: string | null;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
+import { model, Schema } from "mongoose";
+import { RoomMembershipState } from "types";
 
 const RoomMembershipSchema = new Schema<RoomMembershipState>(
   {
@@ -51,13 +25,13 @@ const RoomMembershipSchema = new Schema<RoomMembershipState>(
     joinedAt: { type: Date, default: () => new Date() },
     leftAt: { type: Date, default: null },
 
-    lastReadAt: { type: Date, default: null },
-    lastReadMessageId: {
-      type: Schema.Types.ObjectId,
-      ref: "Message",
-      default: null,
+    lastReadSeq: {
+      type: Number,
+      default: 0,
+      min: 0,
+      set: (v: number) => Math.floor(v ?? 0),
     },
-    lastReadSeq: { type: Number, default: null },
+    lastReadAt: { type: Date, default: null },
 
     isPinned: { type: Boolean, default: false },
     isMuted: { type: Boolean, default: false },
@@ -68,10 +42,28 @@ const RoomMembershipSchema = new Schema<RoomMembershipState>(
 
 /** 한 방에 한 사용자 1개만 존재 */
 RoomMembershipSchema.index({ roomId: 1, userId: 1 }, { unique: true });
-/** 사용자별 내 방 목록 빠른 조회 */
-RoomMembershipSchema.index({ userId: 1, isPinned: 1 });
-/** 읽음 집계/조회 최적화 (옵션) */
+
+/** 내 활성 방 목록: 고정핀 우선 + 최근 입장 우선 */
+RoomMembershipSchema.index(
+  { userId: 1, isPinned: -1, joinedAt: -1 },
+  { partialFilterExpression: { leftAt: null } }
+);
+
+/** 방 내 읽음/알림 집계 최적화 */
 RoomMembershipSchema.index({ roomId: 1, lastReadSeq: 1 });
+
+/** 방 관리자/운영자 빠른 조회 */
+RoomMembershipSchema.index({ roomId: 1, role: 1 });
+
+/** 간단한 정합성 가드: leftAt >= joinedAt */
+RoomMembershipSchema.path("leftAt").validate(function (
+  this: RoomMembershipState,
+  v: Date | null
+) {
+  if (!v) return true;
+  return v >= this.joinedAt;
+},
+"leftAt must be after joinedAt");
 
 export const RoomMembership = model<RoomMembershipState>(
   "RoomMembership",
