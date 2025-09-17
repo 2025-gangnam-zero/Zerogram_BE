@@ -443,7 +443,30 @@ class DietService {
         )
       );
 
-      const result = await dietRepository.deleteDiet(dietId);
+      // 식단 삭제
+      await dietRepository.deleteDiet(dietId);
+
+      await session.commitTransaction();
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  // Meal 삭제 session
+  // transjection 받기
+  async deleteMeal(mealId: Types.ObjectId, session: ClientSession) {
+    try {
+      // diet 조회
+      const { foods } = await this.getMealById(mealId, session);
+
+      const foodIds = foods.map((f) => f._id);
+
+      await this.deleteFoods(foodIds, session);
+
+      const result = await dietRepository.deleteMeal(mealId);
 
       if (!result.acknowledged) {
         throw new InternalServerError("식단 삭제 승인 실패");
