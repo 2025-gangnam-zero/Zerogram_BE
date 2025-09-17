@@ -651,9 +651,15 @@ export const createMeal = async (req: Request, res: Response) => {
 
 // food 생성
 export const createFood = async (req: Request, res: Response) => {
-  const { mealid } = req.params;
-  const { foods } = req.body;
+  const userId = req.user._id;
+  const { dietid, mealid } = req.params;
+  const { foods, total_calories } = req.body;
 
+  console.log("음식 추가", foods, total_calories);
+
+  if (!dietid) {
+    throw new BadRequestError("식단 아이디 필수");
+  }
   if (!mealid) {
     throw new BadRequestError("Meal 아이디 필수");
   }
@@ -663,9 +669,17 @@ export const createFood = async (req: Request, res: Response) => {
   }
 
   try {
+    const dietId = new mongoose.Types.ObjectId(dietid);
     const mealId = new mongoose.Types.ObjectId(mealid);
 
-    const newFoods = await dietService.createFoodsAndAddToMeal(mealId, foods);
+    const newFoods =
+      await dietService.createFoodsAndAddToMealAndUpdateTotalCalories(
+        mealId,
+        foods,
+        dietId,
+        total_calories,
+        userId
+      );
 
     res.status(201).json({
       success: true,
@@ -674,6 +688,7 @@ export const createFood = async (req: Request, res: Response) => {
       timestamp: new Date().toISOString(),
       data: {
         foods: newFoods,
+        total_calories,
       },
     });
   } catch (error) {
@@ -691,6 +706,7 @@ export const getDietById = async (req: Request, res: Response) => {
   }
 
   const _id = new mongoose.Types.ObjectId(dietId);
+  
   try {
     const diet = await dietService.getDietById(_id, user._id);
 

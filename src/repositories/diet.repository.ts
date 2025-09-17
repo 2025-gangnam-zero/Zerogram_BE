@@ -23,13 +23,15 @@ class DietRepository {
   async getDietListByUserId(
     userId: Types.ObjectId,
     year: number,
-    month: number
+    month: number,
+    session?: ClientSession
   ): Promise<DietCreateResponseDto[]> {
     try {
       const diets = await aggregateGetDietListByUserIdForMonth(
         userId,
         year,
-        month
+        month,
+        session
       );
 
       return diets;
@@ -79,7 +81,10 @@ class DietRepository {
   }
 
   // 음식 조회
-  async getFoodById(foodId: Types.ObjectId): Promise<FoodState | null> {
+  async getFoodById(
+    foodId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<FoodState | null> {
     try {
       const food = await Food.findById({ _id: foodId }).lean();
 
@@ -254,9 +259,12 @@ class DietRepository {
   }
 
   // 식단 일지 삭제
-  async deleteDiet(_id: Types.ObjectId): Promise<DeleteResult> {
+  async deleteDiet(
+    _id: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
     try {
-      const result = await Diet.deleteOne({ _id });
+      const result = await Diet.deleteOne({ _id }, { session });
 
       return result;
     } catch (error) {

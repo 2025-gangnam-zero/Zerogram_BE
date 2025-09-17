@@ -312,6 +312,43 @@ class DietService {
     }
   }
 
+  // foods 생성 및 meal에 추가
+  async createFoodsAndAddToMealAndUpdateTotalCalories(
+    mealId: Types.ObjectId,
+    foods: FoodCreateDto[],
+    dietId?: Types.ObjectId,
+    total_calories?: number,
+    userId?: Types.ObjectId
+  ) {
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
+    try {
+      // 음식 생성
+      const newFoods = await Promise.all(
+        foods.map((food) => this.createFood(food, session))
+      );
+
+      const foodIds = newFoods.map((food) => food._id);
+
+      // 생성된 음식 추가
+      await this.addFoodsToMeal(mealId, foodIds, session);
+
+      // 총 칼로리 업데이트
+      if (dietId && total_calories && userId) {
+        await this.updateDiet(dietId, { total_calories }, userId, session);
+      }
+
+      await session.commitTransaction();
+
+      return newFoods;
+    } catch (error) {
+      await session.abortTransaction();
+    } finally {
+      await session.endSession();
+    }
+  }
+
   // 일일 식단 조회
   async getDietById(
     dietId: Types.ObjectId,
