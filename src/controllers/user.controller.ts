@@ -706,7 +706,7 @@ export const getDietById = async (req: Request, res: Response) => {
   }
 
   const _id = new mongoose.Types.ObjectId(dietId);
-
+  
   try {
     const diet = await dietService.getDietById(_id, user._id);
 
@@ -728,8 +728,6 @@ export const getDietById = async (req: Request, res: Response) => {
 export const deleteDietById = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { dietid } = req.params;
-
-  console.log("식단 삭제 요청", dietid);
 
   if (!dietid) {
     throw new BadRequestError("식단 아이디 필수");
@@ -754,8 +752,6 @@ export const deleteDietById = async (req: Request, res: Response) => {
 export const deleteMealById = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { dietid, mealid } = req.params;
-
-  console.log("Meal 삭제 요청", dietid, mealid);
 
   if (!dietid) {
     throw new BadRequestError("Meal 아이디 필수");
@@ -785,8 +781,6 @@ export const deleteMealById = async (req: Request, res: Response) => {
 export const deleteFoodById = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { dietid, mealid, foodid } = req.params;
-
-  console.log("음식 삭제 요청", dietid, mealid, foodid);
 
   if (!dietid) {
     throw new BadRequestError("Meal 아이디 필수");

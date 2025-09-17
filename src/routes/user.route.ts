@@ -139,7 +139,7 @@ export default () => {
 
   // food 수정
   router.patch(
-    "/users/me/diets/:dietid/meals/:mealid/foods/:foodid",
+    "/users/me/diets/:dietid/meals/:mealid/foods/foodid",
     authChecker,
     updateFood
   );
@@ -149,14 +149,14 @@ export default () => {
 
   // meal 삭제
   router.delete(
-    "/users/me/diets/:dietid/meals/:mealid",
+    "/users/me/diets/:dietid/meals/mealid",
     authChecker,
     deleteMealById
   );
 
   // food 삭제
   router.delete(
-    "/users/me/diets/:dietid/meals/:mealid/foods/:foodid",
+    "/users/me/diets/:dietid/meals/mealid/foods/foodid",
     authChecker,
     deleteFoodById
   );
