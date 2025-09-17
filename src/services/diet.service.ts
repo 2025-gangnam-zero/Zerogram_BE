@@ -476,6 +476,9 @@ class DietService {
         mealIds.map((mealId) => this.deleteMeal(mealId, session))
       );
 
+      // 식단 삭제
+      await dietRepository.deleteDiet(dietId);
+
       await session.commitTransaction();
     } catch (error) {
       await session.abortTransaction();
