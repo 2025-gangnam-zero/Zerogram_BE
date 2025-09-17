@@ -428,11 +428,10 @@ class DietService {
     dietId: Types.ObjectId,
     userId: Types.ObjectId
   ): Promise<void> {
+    const session = await mongoose.startSession();
+
+    session.startTransaction();
     try {
-      const session = await mongoose.startSession();
-
-      session.startTransaction();
-
       const { meals } = await this.getDietById(dietId, userId, session);
 
       const mealIds = meals.map((m) => m._id);
@@ -452,6 +451,23 @@ class DietService {
       throw error;
     } finally {
       await session.endSession();
+    }
+  }
+
+  // 음식 일괄 삭제
+  async deleteFoods(foodIds: Types.ObjectId[], session?: ClientSession) {
+    try {
+      const result = await dietRepository.deleteFoods(foodIds, session);
+
+      if (!result.acknowledged) {
+        throw new InternalServerError("음식 일괄 삭제 승인 실패");
+      }
+
+      if (result.deletedCount === 0) {
+        throw new InternalServerError("음식 일괄  삭제 실패");
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
