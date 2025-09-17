@@ -9,7 +9,7 @@ import {
   getUserInfo,
   getWorkoutById,
   getWorkoutListById,
-  updateDietFeedbackById,
+  updateDietById,
   updateMe,
   getMeetingListByUserId,
   createWorkoutDetail,
@@ -24,6 +24,10 @@ import {
   createMeal,
   createFood,
   deleteProfileImage,
+  deleteMealById,
+  deleteFoodById,
+  updateMeal,
+  updateFood,
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
@@ -108,18 +112,56 @@ export default () => {
   );
 
   // --------------------------------------------------------------------------
-
+  // 사용자의 한 달간 식단 일지 조회
   router.get("/users/me/diets", authChecker, getDietListById);
+
   // 식단 일지 생성
   router.post("/users/me/diets", authChecker, createDiet);
-  // 식단 일지 meal 생성
-  router.post("/users/me/diets/:dietid/", authChecker, createMeal);
-  // 식단 일지 food 생성
+
+  // 식단 일지 meal 생성 + 추가
+  router.post("/users/me/diets/:dietid", authChecker, createMeal);
+
+  // 식단 일지 food 생성 + 추가
   router.post("/users/me/diets/:dietid/meals/:mealid", authChecker, createFood);
-  //
+
+  // 개별 식단 일지 조회 => 사용 안함
   router.get("/users/me/diets/:dietid", authChecker, getDietById);
-  router.patch("/users/me/diets/:dietid", authChecker, updateDietFeedbackById);
+
+  // 식단 수정
+  router.patch("/users/me/diets/:dietid", authChecker, updateDietById);
+
+  // meal 수정
+  router.patch(
+    "/users/me/diets/:dietid/meals/:mealid",
+    authChecker,
+    updateMeal
+  );
+
+  // food 수정
+  router.patch(
+    "/users/me/diets/:dietid/meals/:mealid/foods/:foodid",
+    authChecker,
+    updateFood
+  );
+
+  // 식단 삭제
   router.delete("/users/me/diets/:dietid", authChecker, deleteDietById);
+
+  // meal 삭제
+  router.delete(
+    "/users/me/diets/:dietid/meals/:mealid",
+    authChecker,
+    deleteMealById
+  );
+
+  // food 삭제
+  router.delete(
+    "/users/me/diets/:dietid/meals/:mealid/foods/:foodid",
+    authChecker,
+    deleteFoodById
+  );
+
+  // --------------------------------------------------------------------
   router.get("/users/me/meetings", authChecker, getMeetingListByUserId);
 
   return router;
