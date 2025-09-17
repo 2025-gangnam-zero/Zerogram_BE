@@ -226,38 +226,6 @@ class DietRepository {
     }
   }
 
-  // 음식 일괄 삭제
-  async deleteFoods(foodIds: Types.ObjectId[], session?: ClientSession) {
-    try {
-      const result = await Food.deleteMany(
-        {
-          _id: { $in: foodIds },
-        },
-        { session }
-      );
-
-      return result;
-    } catch (error) {
-      throw mongoDBErrorHandler("deleteFoods", error);
-    }
-  }
-
-  // Meal 일괄 삭제
-  async deleteMeals(mealIds: Types.ObjectId[], session?: ClientSession) {
-    try {
-      const result = await Meal.deleteMany(
-        {
-          _id: { $in: mealIds },
-        },
-        { session }
-      );
-
-      return result;
-    } catch (error) {
-      throw mongoDBErrorHandler("deleteMeals", error);
-    }
-  }
-
   // 식단 일지 삭제
   async deleteDiet(
     _id: Types.ObjectId,
@@ -286,6 +254,22 @@ class DietRepository {
     }
   }
 
+  // Meal 일괄 삭제
+  async deleteMeals(mealIds: Types.ObjectId[], session?: ClientSession) {
+    try {
+      const result = await Meal.deleteMany(
+        {
+          _id: { $in: mealIds },
+        },
+        { session }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteMeals", error);
+    }
+  }
+
   // 음식 삭제
   async deleteFood(
     foodId: Types.ObjectId,
@@ -297,6 +281,22 @@ class DietRepository {
       return result;
     } catch (error) {
       throw mongoDBErrorHandler("deleteMeal", error);
+    }
+  }
+
+  // 음식 일괄 삭제
+  async deleteFoods(foodIds: Types.ObjectId[], session?: ClientSession) {
+    try {
+      const result = await Food.deleteMany(
+        {
+          _id: { $in: foodIds },
+        },
+        { session }
+      );
+
+      return result;
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteFoods", error);
     }
   }
 
