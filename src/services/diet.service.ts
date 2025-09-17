@@ -423,87 +423,34 @@ class DietService {
     }
   }
 
-  // meal 일괄 삭제
-  async deleteMeals(mealIds: Types.ObjectId[], session: ClientSession) {
-    try {
-      const result = await dietRepository.deleteMeals(mealIds, session);
-
-      if (!result.acknowledged) {
-        throw new InternalServerError("Meal 일괄 삭제 승인 실패");
-      }
-
-      if (result.deletedCount === 0) {
-        throw new InternalServerError("Meal 일괄  삭제 실패");
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // 음식 일괄 삭제
-  async deleteFoods(foodIds: Types.ObjectId[], session?: ClientSession) {
-    try {
-      const result = await dietRepository.deleteFoods(foodIds, session);
-
-      if (!result.acknowledged) {
-        throw new InternalServerError("음식 일괄 삭제 승인 실패");
-      }
-
-      if (result.deletedCount === 0) {
-        throw new InternalServerError("음식 일괄  삭제 실패");
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
-
   // 식단 삭제
   async deleteDietById(
     dietId: Types.ObjectId,
     userId: Types.ObjectId
   ): Promise<void> {
-    const session = await mongoose.startSession();
-
-    session.startTransaction();
     try {
-      // 식단 조회
+      const session = await mongoose.startSession();
+
+      session.startTransaction();
+
       const { meals } = await this.getDietById(dietId, userId, session);
 
       const mealIds = meals.map((m) => m._id);
 
-      // Meals 일괄 삭제
       await Promise.all(
-        mealIds.map((mealId) => this.deleteMeal(mealId, session))
+        mealIds.map((mealId) =>
+          this.deleteMealById(dietId, mealId, userId, session)
+        )
       );
 
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      await session.endSession();
-    }
-  }
-
-  // Meal 삭제 session
-  // transjection 받기
-  async deleteMeal(mealId: Types.ObjectId, session: ClientSession) {
-    try {
-      // diet 조회
-      const { foods } = await this.getMealById(mealId, session);
-
-      const foodIds = foods.map((f) => f._id);
-
-      await this.deleteFoods(foodIds, session);
-
-      const result = await dietRepository.deleteMeal(mealId);
+      const result = await dietRepository.deleteDiet(dietId);
 
       if (!result.acknowledged) {
-        throw new InternalServerError("Meal 삭제 승인 실패");
+        throw new InternalServerError("식단 삭제 승인 실패");
       }
 
       if (result.deletedCount === 0) {
-        throw new InternalServerError("Meal 삭제 실패");
+        throw new InternalServerError("식단 삭제 실패");
       }
     } catch (error) {
       throw error;
@@ -514,11 +461,9 @@ class DietService {
   async deleteMealById(
     dietId: Types.ObjectId,
     mealId: Types.ObjectId,
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
+    session?: ClientSession
   ) {
-    const session = await mongoose.startSession();
-
-    session.startTransaction();
     try {
       // diet 조회
       const { foods } = await this.getMealById(mealId, session);
@@ -538,13 +483,8 @@ class DietService {
       if (result.deletedCount === 0) {
         throw new InternalServerError("Meal 삭제 실패");
       }
-
-      await session.commitTransaction();
     } catch (error) {
-      await session.abortTransaction();
       throw error;
-    } finally {
-      await session.endSession();
     }
   }
 
