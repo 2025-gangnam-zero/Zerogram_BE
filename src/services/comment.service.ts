@@ -70,7 +70,7 @@ class CommentService {
       await meetService.addCommentToMeet(meetId, newComment._id, session);
 
       // 생성된 댓글 반환
-      const result = await this.getCommentById(newComment._id);
+      const result = await this.getCommentById(newComment._id, session);
 
       await session.commitTransaction();
       return result;
