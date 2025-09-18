@@ -5,3 +5,4 @@ export * from "./workout.type";
 export * from "./meeting.type";
 export * from "./auth.type";
 export * from "./body.type";
+export * from "./meet.type";
