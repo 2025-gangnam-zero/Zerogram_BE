@@ -96,6 +96,23 @@ class CommentService {
       throw error;
     }
   }
+
+  // 댓글 삭제
+  async deleteCommentById(commentId: Types.ObjectId): Promise<void> {
+    try {
+      const result = await commentRepository.deleteComment(commentId);
+
+      if (!result.acknowledged) {
+        throw new InternalServerError("댓글 삭제 승인 실패");
+      }
+
+      if (!result.deletedCount) {
+        throw new InternalServerError("댓글 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default new CommentService();

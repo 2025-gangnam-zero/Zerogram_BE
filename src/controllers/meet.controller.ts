@@ -263,14 +263,15 @@ export const updateComment = async (req: Request, res: Response) => {
 // 댓글 삭제
 export const deleteComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
-  const { meetid } = req.params;
-  if (!meetid) {
+  const { commentid } = req.params;
+  console.log(commentid, userId);
+  if (!commentid) {
     throw new BadRequestError("meetid 필수");
   }
   try {
-    const meetId = new mongoose.Types.ObjectId(meetid);
+    const commentId = new mongoose.Types.ObjectId(commentid);
 
-    console.log(meetId, userId);
+    await commentService.deleteCommentById(commentId);
 
     res.status(200).json({
       success: true,

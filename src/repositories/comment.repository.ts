@@ -69,6 +69,15 @@ class CommentRepository {
       throw mongoDBErrorHandler("updateComment", error);
     }
   }
+
+  // 댓글 삭제
+  async deleteComment(commentId: Types.ObjectId): Promise<DeleteResult> {
+    try {
+      return await Comment.deleteOne({ _id: commentId });
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteComment", error);
+    }
+  }
 }
 
 export default new CommentRepository();
