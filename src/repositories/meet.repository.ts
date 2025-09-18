@@ -1,8 +1,17 @@
 import { MeetState } from "types";
-import { MeetCreateRequestDto, MeetListOpts, MeetResponseDto } from "../dtos";
+import {
+  MeetCreateRequestDto,
+  MeetListOpts,
+  MeetResponseDto,
+  MeetUpdateDto,
+} from "../dtos";
 import { Meet } from "../models";
-import { aggregateGetMeetList, mongoDBErrorHandler } from "../utils";
-import { ClientSession, DeleteResult, Types } from "mongoose";
+import {
+  aggregateGetMeetById,
+  aggregateGetMeetList,
+  mongoDBErrorHandler,
+} from "../utils";
+import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 
 class MeetRepository {
   // 모집글 생성
@@ -22,6 +31,15 @@ class MeetRepository {
       return await aggregateGetMeetList(opts);
     } catch (error) {
       throw mongoDBErrorHandler("getMeetList", error);
+    }
+  }
+
+  // 모집글 조회
+  async getMeetById(meetId: Types.ObjectId): Promise<MeetResponseDto | null> {
+    try {
+      return await aggregateGetMeetById(meetId);
+    } catch (error) {
+      throw mongoDBErrorHandler("getMeetById", error);
     }
   }
 
@@ -46,6 +64,21 @@ class MeetRepository {
       return await Meet.deleteOne({ _id: meetId }, { session });
     } catch (error) {
       throw mongoDBErrorHandler("deleteMeetById", error);
+    }
+  }
+
+  // 모집글 수정
+  async updateMeetById(
+    meetId: Types.ObjectId,
+    meetUpdate: MeetUpdateDto,
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Meet.updateOne({ _id: meetId }, meetUpdate, {
+        session,
+      });
+    } catch (error) {
+      throw mongoDBErrorHandler("updateMeetById", error);
     }
   }
 }

@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { BadRequestError } from "../errors";
-import { MeetCreateRequestDto, MeetListOpts } from "../dtos";
+import {
+  MeetCreateRequestDto,
+  MeetListOpts,
+  MeetUpdateRequestDto,
+} from "../dtos";
 import { meetService } from "../services";
 
 // 모집글 목록 조회
@@ -124,24 +128,21 @@ export const getMeet = async (req: Request, res: Response) => {
 export const updateMeet = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
-  const body = req.body;
+  const meetUpdate = req.body as MeetUpdateRequestDto;
 
-  if (!body.values.every(Boolean)) {
+  console.log(meetUpdate);
+
+  if (!Object.values(meetUpdate).every(Boolean)) {
     throw new BadRequestError("적어도 하나 이상의 수정 필드 필수");
   }
 
   try {
     const meetId = new mongoose.Types.ObjectId(meetid);
-    const { title, description, images, workout_type, location } = body;
 
-    console.log(
-      title,
-      description,
-      images,
-      workout_type,
-      location,
-      userId,
-      meetId
+    const meet = await meetService.updateMeetWithAuth(
+      meetId,
+      meetUpdate,
+      userId
     );
 
     res.status(200).json({
@@ -150,7 +151,7 @@ export const updateMeet = async (req: Request, res: Response) => {
       code: "MEET_UPDATE_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        meet: {},
+        meet,
       },
     });
   } catch (error) {

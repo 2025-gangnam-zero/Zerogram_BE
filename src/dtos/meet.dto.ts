@@ -43,7 +43,6 @@ export interface CommentResponseDto {
 
 // 클라에서 받아야 하는 정보
 export interface MeetUpdateRequestDto {
-  userId: Types.ObjectId; // 서버 전용
   title?: string;
   description?: string;
   images?: string[];

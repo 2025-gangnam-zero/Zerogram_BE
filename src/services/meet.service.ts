@@ -1,5 +1,11 @@
 import mongoose, { Types } from "mongoose";
-import { MeetCreateRequestDto, MeetListOpts, MeetResponseDto } from "../dtos";
+import {
+  MeetCreateRequestDto,
+  MeetListOpts,
+  MeetResponseDto,
+  MeetUpdateDto,
+  MeetUpdateRequestDto,
+} from "../dtos";
 import { ForbiddenError, InternalServerError, NotFoundError } from "../errors";
 import { meetRepository } from "../repositories";
 import { userService, commentService } from "../services";
@@ -35,6 +41,20 @@ class MeetService {
   async getMeetList(opts: MeetListOpts): Promise<MeetResponseDto[]> {
     try {
       return await meetRepository.getMeetList(opts);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 모집글 조회
+  async getMeetById(meetId: Types.ObjectId): Promise<MeetResponseDto> {
+    try {
+      const meet = await meetRepository.getMeetById(meetId);
+      if (!meet) {
+        throw new InternalServerError("모집글 조회 실패");
+      }
+
+      return meet;
     } catch (error) {
       throw error;
     }
@@ -88,7 +108,7 @@ class MeetService {
     }
   }
 
-  // 모집글 삭제 권한 사용자 삭제 
+  // 모집글 삭제 권한 사용자 삭제
   async deleteMeetWithAuthorization(
     meetId: Types.ObjectId,
     userId: Types.ObjectId
@@ -112,6 +132,46 @@ class MeetService {
 
       // 모집글 삭제
       await this.deleteMeetById(meetId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 모집글 수정
+  async updateMeet(
+    meetId: Types.ObjectId,
+    meetUpdate: MeetUpdateDto
+  ): Promise<void> {
+    try {
+      const result = await meetRepository.updateMeetById(meetId, meetUpdate);
+
+      if (result.matchedCount === 0) {
+        throw new NotFoundError("모집글 조회 실패");
+      }
+
+      if (!result.acknowledged || result.modifiedCount === 0) {
+        throw new InternalServerError("모집글 수정 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 모집글 권한 확인 및 수정
+  async updateMeetWithAuth(
+    meetId: Types.ObjectId,
+    meetUpdate: MeetUpdateRequestDto,
+    userId: Types.ObjectId
+  ): Promise<MeetResponseDto> {
+    try {
+      // 권한 확인
+      await this.checkAuthorMatched(meetId, userId);
+
+      // 모집글 수정
+      await this.updateMeet(meetId, meetUpdate);
+
+      // 수정된 모집글 조회
+      return await this.getMeetById(meetId);
     } catch (error) {
       throw error;
     }
