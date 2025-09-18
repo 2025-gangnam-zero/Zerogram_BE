@@ -4,7 +4,7 @@ import { InternalServerError, NotFoundError } from "../errors";
 import {
   CommentCreateRequestDto,
   CommentResponseDto,
-  CommentUpdateRequesetDto,
+  CommentUpdateRequestDto,
 } from "../dtos";
 import meetService from "./meet.service";
 import { CommentState } from "types";
@@ -85,7 +85,7 @@ class CommentService {
   // 댓글 수정
   async updateCommentById(
     commentId: Types.ObjectId,
-    commentUpdate: CommentUpdateRequesetDto
+    commentUpdate: CommentUpdateRequestDto
   ): Promise<CommentState> {
     try {
       const comment = await commentRepository.updateComment(

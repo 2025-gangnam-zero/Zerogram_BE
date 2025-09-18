@@ -1,11 +1,7 @@
 import { ClientSession, DeleteResult, Types } from "mongoose";
 import { aggregateGetCommentById, mongoDBErrorHandler } from "../utils";
 import { Comment } from "../models";
-import {
-  CommentCreateRequestDto,
-  CommentResponseDto,
-  CommentUpdateRequesetDto,
-} from "../dtos";
+import { CommentCreateRequestDto, CommentResponseDto, CommentUpdateRequestDto } from "../dtos";
 import { CommentState } from "../types";
 
 class CommentRepository {
@@ -56,13 +52,16 @@ class CommentRepository {
   // 댓글 수정
   async updateComment(
     commentId: Types.ObjectId,
-    commentUpdate: CommentUpdateRequesetDto,
+    commentUpdate: CommentUpdateRequestDto,
     session?: ClientSession
   ): Promise<CommentState | null> {
     try {
       return await Comment.findOneAndUpdate(
         { _id: commentId },
-        { $set: commentUpdate },
+        {
+          $set: commentUpdate,
+          $currentDate: { updatedAt: true }, // updatedAt 보장
+        },
         { new: true, session }
       );
     } catch (error) {

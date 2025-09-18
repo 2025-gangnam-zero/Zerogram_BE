@@ -60,7 +60,7 @@ export interface MeetUpdateDto {
 }
 
 // 클라에서 받아야 하는 정보
-export interface CommentUpdateRequesetDto {
+export interface CommentUpdateRequestDto {
   content: string;
 }
 

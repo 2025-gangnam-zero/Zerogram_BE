@@ -237,15 +237,15 @@ export const createComment = async (req: Request, res: Response) => {
 export const updateComment = async (req: Request, res: Response) => {
   const user = req.user;
   const { commentid } = req.params;
-  const { content } = req.body;
-  console.log(commentid, user, content);
+  const content = (req.body?.content ?? "").trim(); // 공백 방지
 
   if (!commentid) {
-    throw new BadRequestError("meetid 필수");
+    throw new BadRequestError("commentid 필수");
   }
   if (!content) {
     throw new BadRequestError("content 필수");
   }
+
   try {
     const commentId = new mongoose.Types.ObjectId(commentid);
 
@@ -261,7 +261,7 @@ export const updateComment = async (req: Request, res: Response) => {
       data: {
         comment: {
           ...comment,
-          nickname: user.nickname,
+          nickname: user.nickname, // 기존 방식 유지
         },
       },
     });
@@ -269,6 +269,7 @@ export const updateComment = async (req: Request, res: Response) => {
     throw error;
   }
 };
+
 
 // 댓글 삭제
 export const deleteComment = async (req: Request, res: Response) => {
