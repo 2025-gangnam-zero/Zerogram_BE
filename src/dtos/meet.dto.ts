@@ -1,6 +1,5 @@
-import { LocationType } from "@aws-sdk/client-s3";
 import { Types } from "mongoose";
-import { CrewType, WorkoutType } from "types";
+import { CrewType, WorkoutType, LocationType } from "../types";
 
 // 클라이언트측에서 전달해야 하는 타입
 export interface MeetCreateRequestDto {
@@ -12,16 +11,19 @@ export interface MeetCreateRequestDto {
   location: LocationType;
 }
 
-export interface MeetingResponseDto {
+export interface MeetResponseDto {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   nickname: string;
   title: string;
   description: string;
+  images?: string[];
   workout_type: WorkoutType;
   location: LocationType;
   crews: CrewType[];
   comments: CommentResponseDto[];
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // 클라이언트측에서 전달해야 하는 타입

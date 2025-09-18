@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { WorkoutType } from "./workout.type";
+import { WorkoutType } from "../types";
 
 export interface MeetState {
   _id: Types.ObjectId;
@@ -8,7 +8,7 @@ export interface MeetState {
   description: string;
   images?: string[];
   workout_type: WorkoutType;
-  location: string;
+  location: LocationType;
   crews: Types.ObjectId[];
   comments: Types.ObjectId[];
   createdAt: Date;
@@ -28,6 +28,6 @@ export type LocationType = "강남구" | "서초구";
 
 // 작성자
 export interface CrewType {
-  userId: string;
+  userId: Types.ObjectId;
   nickname: string;
 }
