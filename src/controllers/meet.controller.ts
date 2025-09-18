@@ -270,19 +270,19 @@ export const updateComment = async (req: Request, res: Response) => {
   }
 };
 
-
 // 댓글 삭제
 export const deleteComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { commentid } = req.params;
-  console.log(commentid, userId);
+
   if (!commentid) {
-    throw new BadRequestError("meetid 필수");
+    throw new BadRequestError("commentid 필수");
   }
+
   try {
     const commentId = new mongoose.Types.ObjectId(commentid);
 
-    await commentService.deleteCommentById(commentId);
+    await commentService.deleteCommentById(commentId, userId);
 
     res.status(200).json({
       success: true,

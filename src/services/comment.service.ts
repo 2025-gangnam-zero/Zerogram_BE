@@ -1,6 +1,6 @@
 import mongoose, { ClientSession, Types } from "mongoose";
 import { commentRepository } from "../repositories";
-import { InternalServerError, NotFoundError } from "../errors";
+import { ForbiddenError, InternalServerError, NotFoundError } from "../errors";
 import {
   CommentCreateRequestDto,
   CommentResponseDto,
@@ -104,15 +104,23 @@ class CommentService {
   }
 
   // 댓글 삭제
-  async deleteCommentById(commentId: Types.ObjectId): Promise<void> {
+  async deleteCommentById(
+    commentId: Types.ObjectId,
+    userId: Types.ObjectId
+  ): Promise<void> {
     try {
+      const comment = await this.getCommentById(commentId);
+
+      if (!comment.userId.equals(userId)) {
+        throw new ForbiddenError("삭제 권한 없음");
+      }
       const result = await commentRepository.deleteComment(commentId);
 
       if (!result.acknowledged) {
         throw new InternalServerError("댓글 삭제 승인 실패");
       }
 
-      if (!result.deletedCount) {
+      if (result.deletedCount === 0) {
         throw new InternalServerError("댓글 삭제 실패");
       }
     } catch (error) {
