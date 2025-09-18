@@ -171,6 +171,8 @@ export const deleteMeet = async (req: Request, res: Response) => {
 
     console.log(userId, meetId);
 
+    await meetService.deleteMeetWithAuthorization(meetId, userId);
+
     res.status(200).json({
       success: true,
       message: "모집글 삭제 성공",
