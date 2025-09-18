@@ -485,7 +485,7 @@ export const aggregateGetMeetList = async ({
     { $skip: skip },
     { $limit: limit },
 
-    // --- 작성자 닉네임 조인 ---
+    // 작성자 닉네임
     {
       $lookup: {
         from: "users",
@@ -506,10 +506,8 @@ export const aggregateGetMeetList = async ({
     },
     { $project: { authorInfo: 0 } },
 
-    // --- crews 순서 보존을 위해 원본 보관 ---
+    // crews 순서 보존
     { $addFields: { crewIds: { $ifNull: ["$crews", []] } } },
-
-    // --- crews 조인 (userId + nickname) ---
     {
       $lookup: {
         from: "users",
@@ -521,7 +519,6 @@ export const aggregateGetMeetList = async ({
         as: "crewDocs",
       },
     },
-    // --- crews 원래 순서대로 재정렬 ---
     {
       $addFields: {
         crews: {
@@ -541,20 +538,24 @@ export const aggregateGetMeetList = async ({
         },
       },
     },
-    { $project: { crewDocs: 0 } },
+    // ⚠️ null 제거
+    {
+      $addFields: {
+        crews: {
+          $filter: { input: "$crews", as: "x", cond: { $ne: ["$$x", null] } },
+        },
+      },
+    },
+    { $project: { crewDocs: 0, crewIds: 0 } },
 
-    // --- comments 순서 보존을 위해 원본 보관 ---
+    // comments 순서 보존
     { $addFields: { commentIds: { $ifNull: ["$comments", []] } } },
-
-    // --- comments 조인 후 각 댓글의 작성자 닉네임 조인 ---
     {
       $lookup: {
         from: "comments",
         let: { cids: "$commentIds" },
         pipeline: [
           { $match: { $expr: { $in: ["$_id", "$$cids"] } } },
-
-          // 각 댓글의 작성자 닉네임 조인
           {
             $lookup: {
               from: "users",
@@ -586,7 +587,6 @@ export const aggregateGetMeetList = async ({
         as: "commentDocs",
       },
     },
-    // --- comments 원래 순서대로 재정렬 ---
     {
       $addFields: {
         comments: {
@@ -606,9 +606,21 @@ export const aggregateGetMeetList = async ({
         },
       },
     },
-    { $project: { commentDocs: 0 } },
+    // ⚠️ null 제거
+    {
+      $addFields: {
+        comments: {
+          $filter: {
+            input: "$comments",
+            as: "x",
+            cond: { $ne: ["$$x", null] },
+          },
+        },
+      },
+    },
+    { $project: { commentDocs: 0, commentIds: 0 } },
 
-    // --- 최종 형태로 정리 (MeetResponseDto) ---
+    // 최종 형태
     {
       $project: {
         _id: 1,
@@ -619,8 +631,8 @@ export const aggregateGetMeetList = async ({
         images: 1,
         workout_type: 1,
         location: 1,
-        crews: 1, // [{ userId, nickname }]
-        comments: 1, // [{ _id, userId, nickname, content, createdAt, updatedAt }]
+        crews: 1,
+        comments: 1,
         createdAt: 1,
         updatedAt: 1,
       },

@@ -38,7 +38,7 @@ class MeetService {
   }
 
   // 모집글 목록 조회
-  async getMeetList(opts: MeetListOpts): Promise<MeetResponseDto[]> {
+  async getMeetList(opts?: MeetListOpts): Promise<MeetResponseDto[]> {
     try {
       return await meetRepository.getMeetList(opts);
     } catch (error) {

@@ -4,46 +4,55 @@ import { BadRequestError } from "../errors";
 import {
   CommentCreateRequestDto,
   MeetCreateRequestDto,
-  MeetListOpts,
   MeetUpdateRequestDto,
 } from "../dtos";
 import { commentService, meetService } from "../services";
 
 // 모집글 목록 조회
 export const getMeetList = async (req: Request, res: Response) => {
-  const { skip, limit, location, workout_type } = req.query; // 내용, 제목, 작성자로 검색
+  const { skip, limit, location, workout_type, q } = req.query;
 
-  console.log(skip, limit, location, workout_type);
+  const nSkip = Number(skip);
+  const nLimit = Number(limit);
 
-  if (!skip) {
-    throw new BadRequestError("skip 필수");
+  if (!Number.isInteger(nSkip) || nSkip < 0) {
+    throw new BadRequestError("skip은 0 이상의 정수여야 합니다.");
+  }
+  if (!Number.isInteger(nLimit) || nLimit <= 0 || nLimit > 100) {
+    throw new BadRequestError("limit은 1~100 사이의 정수여야 합니다.");
   }
 
-  if (!limit) {
-    throw new BadRequestError("limit 필수");
+  // 안전한 match 빌더
+  const match: Record<string, any> = {};
+  if (typeof location === "string" && location.trim()) {
+    match.location = location.trim();
+  }
+  if (typeof workout_type === "string" && workout_type.trim()) {
+    match.workout_type = workout_type.trim();
+  }
+
+  if (typeof q === "string" && q.trim()) {
+    const regex = new RegExp(
+      q.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+      "i"
+    );
+    match.$or = [{ title: regex }, { description: regex }];
   }
 
   try {
-    // sort 삭제함 주의할 것
-    const opts = {
-      match: {
-        location: location?.toString(),
-        workout_type: workout_type?.toString(),
-      },
-      skip: skip ? Number(skip.toString()) : undefined,
-      limit: limit ? Number(limit.toString()) : undefined,
-    } as MeetListOpts;
-
-    const meets = await meetService.getMeetList(opts);
+    const meets = await meetService.getMeetList({
+      match,
+      skip: nSkip,
+      limit: nLimit,
+      // sort는 서비스/리포 기본값 활용
+    });
 
     res.status(200).json({
       success: true,
       message: "모집글 목록 조회",
       code: "GET_MEET_LIST_SUCCEEDED",
       timestamp: new Date().toISOString(),
-      data: {
-        meets,
-      },
+      data: { meets },
     });
   } catch (error) {
     throw error;
