@@ -81,10 +81,11 @@ class MeetService {
   // 작성자 확인
   async checkAuthorMatched(
     meetId: Types.ObjectId,
-    userId: Types.ObjectId
+    userId: Types.ObjectId,
+    session?: ClientSession
   ): Promise<void> {
     try {
-      const meet = await this.getMeetAsDoc(meetId);
+      const meet = await this.getMeetAsDoc(meetId, session);
 
       if (!userId.equals(meet.userId)) {
         throw new ForbiddenError("권한 없음");
@@ -95,9 +96,12 @@ class MeetService {
   }
 
   // 모집글 삭제
-  async deleteMeetById(meetId: Types.ObjectId): Promise<void> {
+  async deleteMeetById(
+    meetId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<void> {
     try {
-      const result = await meetRepository.deleteMeetById(meetId);
+      const result = await meetRepository.deleteMeetById(meetId, session);
 
       if (!result.acknowledged) {
         throw new InternalServerError("모집글 삭제 승인 실패");
@@ -111,32 +115,52 @@ class MeetService {
     }
   }
 
-  // 모집글 삭제 권한 사용자 삭제
+  // 모집글 삭제 (권한검사 + 댓글 일괄 삭제 + 모집글 삭제) - 트랜잭션 적용
   async deleteMeetWithAuthorization(
     meetId: Types.ObjectId,
     userId: Types.ObjectId
   ) {
     const session = await mongoose.startSession();
-    session.startTransaction();
     try {
-      // 권한 확인
-      await this.checkAuthorMatched(meetId, userId);
+      await session.withTransaction(
+        async () => {
+          // 1) 권한 확인 (같은 세션으로 조회)
+          await this.checkAuthorMatched(meetId, userId, session);
 
-      // 모집글의 댓글 목록
-      const { comments } = await this.getMeetAsDoc(meetId);
+          // 2) 모집글 조회 (댓글 목록 포함)
+          const meet = await this.getMeetAsDoc(meetId, session);
 
-      // 모집글 내 댓글 삭제
-      if (comments.length !== 0) {
-        const commentIds = comments.map((comment) => comment._id);
+          // 3) 댓글 삭제
+          const comments = meet.comments ?? [];
+          if (comments.length > 0) {
+            // comments 타입이 ObjectId[] 라면 그대로 사용
+            const commentIds: Types.ObjectId[] = comments
+              .map((c: any) =>
+                // c가 ObjectId면 그대로, 서브도큐먼트면 c._id
+                c instanceof Types.ObjectId ? c : c?._id
+              )
+              .filter(Boolean);
 
-        // 댓글 일괄 삭제
-        await commentService.deleteAllComments(commentIds);
-      }
+            if (commentIds.length > 0) {
+              await commentService.deleteAllComments(commentIds, session);
+            }
+          }
 
-      // 모집글 삭제
-      await this.deleteMeetById(meetId);
+          // (대안) 댓글이 meetId를 참조한다면 훨씬 간단하게:
+          // await commentService.deleteAllByMeetId(meetId, session);
+
+          // 4) 모집글 삭제
+          await this.deleteMeetById(meetId, session);
+        },
+        {
+          readConcern: { level: "snapshot" },
+          writeConcern: { w: "majority" },
+        }
+      );
     } catch (error) {
       throw error;
+    } finally {
+      session.endSession();
     }
   }
 

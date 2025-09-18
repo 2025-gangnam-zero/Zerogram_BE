@@ -11,9 +11,15 @@ import { CommentState } from "types";
 
 class CommentService {
   // 댓글 일괄 삭제
-  async deleteAllComments(commentIds: Types.ObjectId[]): Promise<void> {
+  async deleteAllComments(
+    commentIds: Types.ObjectId[],
+    session?: ClientSession
+  ): Promise<void> {
     try {
-      const result = await commentRepository.deleteAllComments(commentIds);
+      const result = await commentRepository.deleteAllComments(
+        commentIds,
+        session
+      );
 
       if (!result.acknowledged) {
         throw new InternalServerError("댓글 일괄 삭제 승인 실패");
