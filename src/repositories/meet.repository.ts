@@ -102,6 +102,40 @@ class MeetRepository {
       throw mongoDBErrorHandler("addCommentToMeet", error);
     }
   }
+
+  // 모집글에 참여자 추가
+  async addToCrews(
+    meetId: Types.ObjectId,
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Meet.updateOne(
+        { _id: meetId },
+        { $addToSet: { crews: userId } }, // 중복 방지
+        { session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("addToCrews", error);
+    }
+  }
+
+  // 모집글에 참여자 삭제
+  async removeFromCrews(
+    meetId: Types.ObjectId,
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Meet.updateOne(
+        { _id: meetId },
+        { $pull: { crews: userId } },
+        { session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("removeFromCrews", error);
+    }
+  }
 }
 
 export default new MeetRepository();

@@ -286,21 +286,28 @@ export const deleteComment = async (req: Request, res: Response) => {
 
 // 참여자 추가/삭제
 export const toggleCrew = async (req: Request, res: Response) => {
-  const userId = req.user._id;
+  const user = req.user;
   const { meetid } = req.params;
+  console.log(meetid, user);
   if (!meetid) {
     throw new BadRequestError("meetid 필수");
   }
   try {
     const meetId = new mongoose.Types.ObjectId(meetid);
 
-    console.log(meetId, userId);
+    const isNew = await meetService.toggleCrew(meetId, user._id);
 
     res.status(200).json({
       success: true,
       message: "참여자 추가/삭제 성공",
       code: "CREW_UPDATE_SUCCEEDED",
       timestamp: new Date().toISOString(),
+      data: isNew
+        ? {
+            userId: user._id,
+            nickname: user.nickname,
+          }
+        : undefined,
     });
   } catch (error) {
     throw error;

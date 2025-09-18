@@ -61,9 +61,12 @@ class MeetService {
   }
 
   // 모집글 doc 조회
-  async getMeetAsDoc(meetId: Types.ObjectId): Promise<MeetState> {
+  async getMeetAsDoc(
+    meetId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<MeetState> {
     try {
-      const meet = await meetRepository.getMeetAsDoc(meetId);
+      const meet = await meetRepository.getMeetAsDoc(meetId, session);
 
       if (!meet) {
         throw new NotFoundError("모집글 조회 실패");
@@ -177,6 +180,7 @@ class MeetService {
     }
   }
 
+  // 모집글에 댓글 아이디 추가
   async addCommentToMeet(
     meetId: Types.ObjectId,
     commentId: Types.ObjectId,
@@ -198,6 +202,81 @@ class MeetService {
       }
     } catch (error) {
       throw error;
+    }
+  }
+
+  // 참여자 추가
+  async addToCrews(
+    meetId: Types.ObjectId,
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ) {
+    try {
+      const result = await meetRepository.addToCrews(meetId, userId, session);
+
+      if (result.matchedCount === 0) {
+        throw new NotFoundError("모집글 조회 실패");
+      }
+
+      if (!result.acknowledged || result.modifiedCount === 0) {
+        throw new InternalServerError("참여자 추가 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 참여자 삭제
+  async removeToCrews(
+    meetId: Types.ObjectId,
+    userId: Types.ObjectId,
+    session?: ClientSession
+  ) {
+    try {
+      const result = await meetRepository.removeFromCrews(
+        meetId,
+        userId,
+        session
+      );
+
+      if (result.matchedCount === 0) {
+        throw new NotFoundError("모집글 조회 실패");
+      }
+
+      if (!result.acknowledged || result.modifiedCount === 0) {
+        throw new InternalServerError("참여자 삭제 실패");
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // 모집글에 참여자 추가 삭제
+  async toggleCrew(meetId: Types.ObjectId, userId: Types.ObjectId) {
+    const session = await mongoose.startSession();
+    try {
+      session.startTransaction();
+
+      // 모집글 조회
+      const meet = await this.getMeetAsDoc(meetId, session);
+
+      const crews = meet.crews;
+
+      // 현재 참여자 인경우
+      if (crews.includes(userId)) {
+        await this.removeToCrews(meetId, userId);
+      } else {
+        //현재 참여자가 아닌 경우
+        await this.addToCrews(meetId, userId);
+      }
+
+      await session.commitTransaction();
+      return !crews.includes(userId);
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
     }
   }
 }
