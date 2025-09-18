@@ -1,8 +1,13 @@
 import mongoose, { ClientSession, Types } from "mongoose";
 import { commentRepository } from "../repositories";
 import { InternalServerError, NotFoundError } from "../errors";
-import { CommentCreateRequestDto, CommentResponseDto } from "../dtos";
+import {
+  CommentCreateRequestDto,
+  CommentResponseDto,
+  CommentUpdateRequesetDto,
+} from "../dtos";
 import meetService from "./meet.service";
+import { CommentState } from "types";
 
 class CommentService {
   // 댓글 일괄 삭제
@@ -68,6 +73,27 @@ class CommentService {
       throw error;
     } finally {
       await session.endSession();
+    }
+  }
+
+  // 댓글 수정
+  async updateCommentById(
+    commentId: Types.ObjectId,
+    commentUpdate: CommentUpdateRequesetDto
+  ): Promise<CommentState> {
+    try {
+      const comment = await commentRepository.updateComment(
+        commentId,
+        commentUpdate
+      );
+
+      if (!comment) {
+        throw new InternalServerError("댓글 수정 실패");
+      }
+
+      return comment;
+    } catch (error) {
+      throw error;
     }
   }
 }

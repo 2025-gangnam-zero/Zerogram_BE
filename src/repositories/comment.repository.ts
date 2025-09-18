@@ -1,7 +1,11 @@
 import { ClientSession, DeleteResult, Types } from "mongoose";
 import { aggregateGetCommentById, mongoDBErrorHandler } from "../utils";
 import { Comment } from "../models";
-import { CommentCreateRequestDto, CommentResponseDto } from "../dtos";
+import {
+  CommentCreateRequestDto,
+  CommentResponseDto,
+  CommentUpdateRequesetDto,
+} from "../dtos";
 import { CommentState } from "../types";
 
 class CommentRepository {
@@ -46,6 +50,23 @@ class CommentRepository {
       return await doc.save({ session });
     } catch (error) {
       throw mongoDBErrorHandler("createComment", error);
+    }
+  }
+
+  // 댓글 수정
+  async updateComment(
+    commentId: Types.ObjectId,
+    commentUpdate: CommentUpdateRequesetDto,
+    session?: ClientSession
+  ): Promise<CommentState | null> {
+    try {
+      return await Comment.findOneAndUpdate(
+        { _id: commentId },
+        { $set: commentUpdate },
+        { new: true, session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("updateComment", error);
     }
   }
 }

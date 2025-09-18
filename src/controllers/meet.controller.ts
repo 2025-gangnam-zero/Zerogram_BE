@@ -192,7 +192,7 @@ export const createComment = async (req: Request, res: Response) => {
   const { meetid } = req.params;
   const { content } = req.body;
   console.log(meetid, userId, content);
-  
+
   if (!meetid) {
     throw new BadRequestError("meetid 필수");
   }
@@ -225,19 +225,23 @@ export const createComment = async (req: Request, res: Response) => {
 
 // 댓글 수정
 export const updateComment = async (req: Request, res: Response) => {
-  const userId = req.user._id;
-  const { meetid } = req.params;
+  const user = req.user;
+  const { commentid } = req.params;
   const { content } = req.body;
-  if (!meetid) {
+  console.log(commentid, user, content);
+
+  if (!commentid) {
     throw new BadRequestError("meetid 필수");
   }
   if (!content) {
     throw new BadRequestError("content 필수");
   }
   try {
-    const meetId = new mongoose.Types.ObjectId(meetid);
+    const commentId = new mongoose.Types.ObjectId(commentid);
 
-    console.log(meetId, userId, content);
+    const comment = await commentService.updateCommentById(commentId, {
+      content,
+    });
 
     res.status(200).json({
       success: true,
@@ -245,7 +249,10 @@ export const updateComment = async (req: Request, res: Response) => {
       code: "COMMENT_UPDATE_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        comment: {},
+        comment: {
+          ...comment,
+          nickname: user.nickname,
+        },
       },
     });
   } catch (error) {
