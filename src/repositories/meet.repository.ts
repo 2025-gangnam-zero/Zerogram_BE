@@ -74,11 +74,32 @@ class MeetRepository {
     session?: ClientSession
   ): Promise<UpdateResult> {
     try {
-      return await Meet.updateOne({ _id: meetId }, meetUpdate, {
-        session,
-      });
+      return await Meet.updateOne(
+        { _id: meetId },
+        { $set: meetUpdate },
+        {
+          session,
+        }
+      );
     } catch (error) {
       throw mongoDBErrorHandler("updateMeetById", error);
+    }
+  }
+
+  // 모집글에 댓글 추가
+  async addCommentToMeet(
+    meetId: Types.ObjectId,
+    commentId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Meet.updateOne(
+        { _id: meetId },
+        { $addToSet: { comments: commentId } }, // 중복 방지
+        { session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("addCommentToMeet", error);
     }
   }
 }

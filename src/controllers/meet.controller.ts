@@ -2,11 +2,12 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { BadRequestError } from "../errors";
 import {
+  CommentCreateRequestDto,
   MeetCreateRequestDto,
   MeetListOpts,
   MeetUpdateRequestDto,
 } from "../dtos";
-import { meetService } from "../services";
+import { commentService, meetService } from "../services";
 
 // 모집글 목록 조회
 export const getMeetList = async (req: Request, res: Response) => {
@@ -190,6 +191,8 @@ export const createComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   const { content } = req.body;
+  console.log(meetid, userId, content);
+  
   if (!meetid) {
     throw new BadRequestError("meetid 필수");
   }
@@ -199,7 +202,12 @@ export const createComment = async (req: Request, res: Response) => {
   try {
     const meetId = new mongoose.Types.ObjectId(meetid);
 
-    console.log(meetId, userId, content);
+    const newComment = {
+      userId,
+      content,
+    } as CommentCreateRequestDto;
+
+    const comment = await commentService.createComment(meetId, newComment);
 
     res.status(201).json({
       success: true,
@@ -207,7 +215,7 @@ export const createComment = async (req: Request, res: Response) => {
       code: "COMMENT_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        comment: {},
+        comment,
       },
     });
   } catch (error) {

@@ -1,4 +1,4 @@
-import mongoose, { Types } from "mongoose";
+import mongoose, { ClientSession, Types } from "mongoose";
 import {
   MeetCreateRequestDto,
   MeetListOpts,
@@ -172,6 +172,30 @@ class MeetService {
 
       // 수정된 모집글 조회
       return await this.getMeetById(meetId);
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addCommentToMeet(
+    meetId: Types.ObjectId,
+    commentId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<void> {
+    try {
+      const result = await meetRepository.addCommentToMeet(
+        meetId,
+        commentId,
+        session
+      );
+
+      if (result.matchedCount === 0) {
+        throw new NotFoundError("모집글 조회 실패");
+      }
+
+      if (!result.acknowledged || result.modifiedCount === 0) {
+        throw new InternalServerError("모집글에 댓글 추가 실패");
+      }
     } catch (error) {
       throw error;
     }

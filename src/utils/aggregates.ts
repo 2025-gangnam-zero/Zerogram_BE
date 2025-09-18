@@ -1,6 +1,7 @@
-import { ClientSession, Types } from "mongoose";
-import { Diet, Meal, Meet, Workout } from "../models";
+import { ClientSession, PipelineStage, Types } from "mongoose";
+import { Comment, Diet, Meal, Meet, Workout } from "../models";
 import {
+  CommentResponseDto,
   DietCreateResponseDto,
   MealResponseDto,
   MeetListOpts,
@@ -793,5 +794,55 @@ export async function aggregateGetMeetById(
     },
   ]).exec();
 
+  return doc ?? null;
+}
+
+export async function aggregateGetCommentById(
+  commentId: Types.ObjectId,
+  session?: ClientSession
+): Promise<CommentResponseDto | null> {
+  const pipeline: PipelineStage[] = [
+    // 1) 대상 댓글 매치
+    { $match: { _id: commentId } },
+    { $limit: 1 },
+
+    // 2) 작성자 닉네임 조인
+    {
+      $lookup: {
+        from: "users",
+        let: { uid: "$userId" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+          { $project: { _id: 0, nickname: 1 } },
+        ],
+        as: "authorInfo",
+      },
+    },
+    {
+      $addFields: {
+        nickname: {
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
+        },
+      },
+    },
+    { $project: { authorInfo: 0 } },
+
+    // 3) 최종 필드 (DTO 스펙에 맞춤)
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        nickname: 1,
+        content: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ];
+
+  const agg = Comment.aggregate<CommentResponseDto>(pipeline);
+  if (session) agg.option({ session });
+
+  const [doc] = await agg.exec();
   return doc ?? null;
 }
