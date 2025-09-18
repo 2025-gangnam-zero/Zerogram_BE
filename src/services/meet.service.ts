@@ -281,21 +281,24 @@ class MeetService {
     try {
       session.startTransaction();
 
-      // 모집글 조회
+      // 모집글 조회 (같은 세션)
       const meet = await this.getMeetAsDoc(meetId, session);
 
-      const crews = meet.crews;
+      // ObjectId 비교는 equals 사용 (undefined 대비도 추가)
+      const crews: Types.ObjectId[] = (meet.crews ?? []) as any;
+      const isMember = crews.some((id) => id.equals(userId));
 
-      // 현재 참여자 인경우
-      if (crews.includes(userId)) {
-        await this.removeToCrews(meetId, userId);
+      if (isMember) {
+        // ✅ 세션 전파
+        await this.removeToCrews(meetId, userId, session);
       } else {
-        //현재 참여자가 아닌 경우
-        await this.addToCrews(meetId, userId);
+        // ✅ 세션 전파
+        await this.addToCrews(meetId, userId, session);
       }
 
       await session.commitTransaction();
-      return !crews.includes(userId);
+      // 추가되었으면 true(신규), 삭제되었으면 false 반환
+      return !isMember;
     } catch (error) {
       await session.abortTransaction();
       throw error;
