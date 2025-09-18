@@ -8,9 +8,9 @@ import {
   toggleCrew,
   updateComment,
   updateMeet,
-} from "controllers/meet.controller";
+} from "../controllers";
 import { Router } from "express";
-import { authChecker } from "middlewares";
+import { authChecker } from "../middlewares";
 
 export default () => {
   const router = Router();

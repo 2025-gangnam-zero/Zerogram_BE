@@ -1,9 +1,11 @@
-import { BadRequestError } from "errors";
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { BadRequestError } from "../errors";
+import { MeetCreateRequestDto } from "../dtos";
+import { meetService } from "../services";
 
 // 모집글 목록 조회
-export const getMeetList = (req: Request, res: Response) => {
+export const getMeetList = async (req: Request, res: Response) => {
   const { skip, limit, keyword } = req.query; // 내용, 제목, 작성자로 검색
 
   console.log(skip, limit, keyword);
@@ -32,7 +34,7 @@ export const getMeetList = (req: Request, res: Response) => {
 };
 
 // 모집글 생성
-export const createMeet = (req: Request, res: Response) => {
+export const createMeet = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { title, description, images, workout_type, location } = req.body;
 
@@ -55,13 +57,24 @@ export const createMeet = (req: Request, res: Response) => {
   }
 
   try {
+    const newMeet = {
+      userId,
+      title,
+      description,
+      images,
+      workout_type,
+      location,
+    } as MeetCreateRequestDto;
+
+    const meet = await meetService.createMeet(newMeet);
+
     res.status(201).json({
       success: true,
       message: "모집글 생성 성공",
       code: "MEET_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        meets: [],
+        meet,
       },
     });
   } catch (error) {
@@ -70,7 +83,7 @@ export const createMeet = (req: Request, res: Response) => {
 };
 
 // 모집글 상세 조회
-export const getMeet = (req: Request, res: Response) => {
+export const getMeet = async (req: Request, res: Response) => {
   const { meetid } = req.params;
 
   if (!meetid) {
@@ -96,7 +109,7 @@ export const getMeet = (req: Request, res: Response) => {
 };
 
 // 모집글 수정
-export const updateMeet = (req: Request, res: Response) => {
+export const updateMeet = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   const body = req.body;
@@ -134,7 +147,7 @@ export const updateMeet = (req: Request, res: Response) => {
 };
 
 // 모집글 삭제
-export const deleteMeet = (req: Request, res: Response) => {
+export const deleteMeet = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
 
@@ -158,7 +171,7 @@ export const deleteMeet = (req: Request, res: Response) => {
 };
 
 // 댓글 생성
-export const createComment = (req: Request, res: Response) => {
+export const createComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   const { content } = req.body;
@@ -188,7 +201,7 @@ export const createComment = (req: Request, res: Response) => {
 };
 
 // 댓글 수정
-export const updateComment = (req: Request, res: Response) => {
+export const updateComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   const { content } = req.body;
@@ -218,7 +231,7 @@ export const updateComment = (req: Request, res: Response) => {
 };
 
 // 댓글 삭제
-export const deleteComment = (req: Request, res: Response) => {
+export const deleteComment = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   if (!meetid) {
@@ -241,7 +254,7 @@ export const deleteComment = (req: Request, res: Response) => {
 };
 
 // 참여자 추가/삭제
-export const toggleCrew = (req: Request, res: Response) => {
+export const toggleCrew = async (req: Request, res: Response) => {
   const userId = req.user._id;
   const { meetid } = req.params;
   if (!meetid) {
