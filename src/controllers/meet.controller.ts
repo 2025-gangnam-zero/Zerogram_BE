@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { BadRequestError } from "../errors";
 import {
   CommentCreateRequestDto,
@@ -52,36 +52,29 @@ export const getMeetList = async (req: Request, res: Response) => {
 
 // 모집글 생성
 export const createMeet = async (req: Request, res: Response) => {
-  const userId = req.user._id;
-  const { title, description, images, workout_type, location } = req.body;
+  const userId = req.user._id as Types.ObjectId;
+  const { title, description, workout_type, location } = req.body;
 
-  console.log(title, description, images, workout_type, location, userId);
+  // files 안전 처리
+  const files = (req.files as Express.MulterS3.File[]) ?? [];
+  const imageUrls = files.map((f) => (f as any).location as string); // S3 퍼블릭 URL
+  // 필요 시 key를 함께 저장하세요: const keys = files.map(f => (f as any).key);
 
-  if (!title) {
-    throw new BadRequestError("제목 필수");
-  }
-
-  if (!description) {
-    throw new BadRequestError("제목 필수");
-  }
-
-  if (!workout_type) {
-    throw new BadRequestError("운동 타입 필수");
-  }
-
-  if (!location) {
-    throw new BadRequestError("장소 필수");
-  }
+  if (!title) throw new BadRequestError("제목 필수");
+  if (!description) throw new BadRequestError("내용 필수"); // ← 오타 수정
+  if (!workout_type) throw new BadRequestError("운동 타입 필수");
+  if (!location) throw new BadRequestError("장소 필수");
 
   try {
-    const newMeet = {
+    // 작성자를 crews에 자동 포함 → DB 일관성↑
+    const newMeet: MeetCreateRequestDto = {
       userId,
       title,
       description,
-      images,
+      images: imageUrls.length ? imageUrls : undefined,
       workout_type,
       location,
-    } as MeetCreateRequestDto;
+    };
 
     const meet = await meetService.createMeet(newMeet);
 
@@ -90,9 +83,7 @@ export const createMeet = async (req: Request, res: Response) => {
       message: "모집글 생성 성공",
       code: "MEET_CREATION_SUCCEEDED",
       timestamp: new Date().toISOString(),
-      data: {
-        meet,
-      },
+      data: { meet },
     });
   } catch (error) {
     throw error;

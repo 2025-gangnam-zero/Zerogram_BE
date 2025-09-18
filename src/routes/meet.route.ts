@@ -1,3 +1,4 @@
+import { Router } from "express";
 import {
   createComment,
   createMeet,
@@ -9,8 +10,8 @@ import {
   updateComment,
   updateMeet,
 } from "../controllers";
-import { Router } from "express";
 import { authChecker } from "../middlewares";
+import { upload } from "../utils";
 
 export default () => {
   const router = Router();
@@ -19,7 +20,7 @@ export default () => {
   router.get("/meets", authChecker, getMeetList);
 
   // 모집글 생성
-  router.post("/meets", authChecker, createMeet);
+  router.post("/meets", authChecker, upload.array("images", 3), createMeet);
 
   // 모집글 상세 조회
   router.get("/meets/:meetid", authChecker, getMeet);

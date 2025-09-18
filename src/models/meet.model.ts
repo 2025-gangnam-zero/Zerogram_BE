@@ -52,7 +52,9 @@ const MeetSchema = new mongoose.Schema<MeetState>(
     crews: {
       type: [Schema.Types.ObjectId],
       ref: "User",
-      default: [],
+      default: function (this: any) {
+        return this.userId ? [this.userId] : [];
+      },
     },
     comments: {
       type: [Schema.Types.ObjectId],
