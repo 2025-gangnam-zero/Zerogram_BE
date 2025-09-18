@@ -26,7 +26,12 @@ export default () => {
   router.get("/meets/:meetid", authChecker, getMeet);
 
   // 모집글 수정
-  router.patch("/meets/:meetid", authChecker, updateMeet);
+  router.patch(
+    "/meets/:meetid",
+    authChecker,
+    upload.array("images", 3),
+    updateMeet
+  );
 
   // 모집글 삭제
   router.delete("/meets/:meetid", authChecker, deleteMeet);

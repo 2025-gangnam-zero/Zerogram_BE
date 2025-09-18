@@ -67,7 +67,6 @@ export const createMeet = async (req: Request, res: Response) => {
   // files 안전 처리
   const files = (req.files as Express.MulterS3.File[]) ?? [];
   const imageUrls = files.map((f) => (f as any).location as string); // S3 퍼블릭 URL
-  // 필요 시 key를 함께 저장하세요: const keys = files.map(f => (f as any).key);
 
   if (!title) throw new BadRequestError("제목 필수");
   if (!description) throw new BadRequestError("내용 필수"); // ← 오타 수정
@@ -131,9 +130,19 @@ export const updateMeet = async (req: Request, res: Response) => {
   const { meetid } = req.params;
   const meetUpdate = req.body as MeetUpdateRequestDto;
 
-  console.log(meetUpdate);
+  // files 안전 처리
+  const files = (req.files as Express.MulterS3.File[]) ?? [];
+  const imageUrls = files.map((f) => (f as any).location as string);
 
-  if (!Object.values(meetUpdate).every(Boolean)) {
+  // 빈 값(undefined/null/'') 제거해서 부분 수정만 반영
+  const cleaned = Object.fromEntries(
+    Object.entries(meetUpdate).filter(
+      ([, v]) => v !== undefined && v !== null && v !== ""
+    )
+  ) as MeetUpdateRequestDto;
+
+  // 수정 내용이 전혀 없고, 업로드도 없으면 에러
+  if (Object.keys(cleaned).length === 0 && imageUrls.length === 0) {
     throw new BadRequestError("적어도 하나 이상의 수정 필드 필수");
   }
 
@@ -142,18 +151,19 @@ export const updateMeet = async (req: Request, res: Response) => {
 
     const meet = await meetService.updateMeetWithAuth(
       meetId,
-      meetUpdate,
+      // 업로드가 있을 때만 images를 덮어씀 (없으면 기존 이미지 유지)
+      (imageUrls.length > 0
+        ? { ...cleaned, images: imageUrls }
+        : cleaned) as MeetUpdateRequestDto,
       userId
     );
 
     res.status(200).json({
       success: true,
-      message: "모집글 생성 성공",
+      message: "모집글 수정 성공",
       code: "MEET_UPDATE_SUCCEEDED",
       timestamp: new Date().toISOString(),
-      data: {
-        meet,
-      },
+      data: { meet },
     });
   } catch (error) {
     throw error;
