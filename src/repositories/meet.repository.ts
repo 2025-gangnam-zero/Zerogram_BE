@@ -1,7 +1,7 @@
 import { MeetState } from "types";
-import { MeetCreateRequestDto } from "../dtos";
+import { MeetCreateRequestDto, MeetListOpts, MeetResponseDto } from "../dtos";
 import { Meet } from "../models";
-import { mongoDBErrorHandler } from "../utils";
+import { aggregateGetMeetList, mongoDBErrorHandler } from "../utils";
 
 class MeetRepository {
   // 모집글 생성
@@ -12,6 +12,15 @@ class MeetRepository {
       return meet;
     } catch (error) {
       throw mongoDBErrorHandler("createMeet", error);
+    }
+  }
+
+  // 모집글 목록 조회
+  async getMeetList(opts?: MeetListOpts): Promise<MeetResponseDto[]> {
+    try {
+      return await aggregateGetMeetList(opts);
+    } catch (error) {
+      throw mongoDBErrorHandler("getMeetList", error);
     }
   }
 }

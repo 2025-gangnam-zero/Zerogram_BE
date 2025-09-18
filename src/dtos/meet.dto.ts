@@ -85,3 +85,10 @@ export interface CommentDeleteRequestDto {
 export interface CommentDeleteDto {
   meetId: Types.ObjectId;
 }
+
+export interface MeetListOpts {
+  match?: Record<string, any>; // 예: { location: "강남구", workout_type: "running" }
+  skip?: number; // 기본 0
+  limit?: number; // 기본 20
+  sort?: Record<string, 1 | -1>; // 기본 { createdAt: -1, _id: -1 }
+}

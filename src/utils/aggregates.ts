@@ -1,8 +1,9 @@
 import { ClientSession, Types } from "mongoose";
-import { Diet, Meal, Workout } from "../models";
+import { Diet, Meal, Meet, Workout } from "../models";
 import {
   DietCreateResponseDto,
   MealResponseDto,
+  MeetListOpts,
   WorkoutResponseDto,
 } from "../dtos";
 
@@ -469,3 +470,158 @@ export async function aggregateGetMealById(
 
   return (doc as MealResponseDto) ?? null;
 }
+
+export const aggregateGetMeetList = async ({
+  match = {},
+  skip = 0,
+  limit = 20,
+  sort = { createdAt: -1, _id: -1 },
+}: MeetListOpts = {}) => {
+  return await Meet.aggregate([
+    { $match: match },
+    { $sort: sort },
+    { $skip: skip },
+    { $limit: limit },
+
+    // --- 작성자 닉네임 조인 ---
+    {
+      $lookup: {
+        from: "users",
+        let: { uid: "$userId" },
+        pipeline: [
+          { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+          { $project: { _id: 0, nickname: 1 } },
+        ],
+        as: "authorInfo",
+      },
+    },
+    {
+      $addFields: {
+        nickname: {
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
+        },
+      },
+    },
+    { $project: { authorInfo: 0 } },
+
+    // --- crews 순서 보존을 위해 원본 보관 ---
+    { $addFields: { crewIds: { $ifNull: ["$crews", []] } } },
+
+    // --- crews 조인 (userId + nickname) ---
+    {
+      $lookup: {
+        from: "users",
+        let: { crewIds: "$crewIds" },
+        pipeline: [
+          { $match: { $expr: { $in: ["$_id", "$$crewIds"] } } },
+          { $project: { _id: 0, userId: "$_id", nickname: 1 } },
+        ],
+        as: "crewDocs",
+      },
+    },
+    // --- crews 원래 순서대로 재정렬 ---
+    {
+      $addFields: {
+        crews: {
+          $map: {
+            input: "$crewIds",
+            as: "cid",
+            in: {
+              $first: {
+                $filter: {
+                  input: "$crewDocs",
+                  as: "c",
+                  cond: { $eq: ["$$c.userId", "$$cid"] },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    { $project: { crewDocs: 0 } },
+
+    // --- comments 순서 보존을 위해 원본 보관 ---
+    { $addFields: { commentIds: { $ifNull: ["$comments", []] } } },
+
+    // --- comments 조인 후 각 댓글의 작성자 닉네임 조인 ---
+    {
+      $lookup: {
+        from: "comments",
+        let: { cids: "$commentIds" },
+        pipeline: [
+          { $match: { $expr: { $in: ["$_id", "$$cids"] } } },
+
+          // 각 댓글의 작성자 닉네임 조인
+          {
+            $lookup: {
+              from: "users",
+              let: { uid: "$userId" },
+              pipeline: [
+                { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+                { $project: { _id: 0, nickname: 1 } },
+              ],
+              as: "u",
+            },
+          },
+          {
+            $addFields: {
+              nickname: { $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""] },
+            },
+          },
+          {
+            $project: {
+              u: 0,
+              _id: 1,
+              userId: 1,
+              nickname: 1,
+              content: 1,
+              createdAt: 1,
+              updatedAt: 1,
+            },
+          },
+        ],
+        as: "commentDocs",
+      },
+    },
+    // --- comments 원래 순서대로 재정렬 ---
+    {
+      $addFields: {
+        comments: {
+          $map: {
+            input: "$commentIds",
+            as: "cid",
+            in: {
+              $first: {
+                $filter: {
+                  input: "$commentDocs",
+                  as: "c",
+                  cond: { $eq: ["$$c._id", "$$cid"] },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    { $project: { commentDocs: 0 } },
+
+    // --- 최종 형태로 정리 (MeetResponseDto) ---
+    {
+      $project: {
+        _id: 1,
+        userId: 1,
+        nickname: 1,
+        title: 1,
+        description: 1,
+        images: 1,
+        workout_type: 1,
+        location: 1,
+        crews: 1, // [{ userId, nickname }]
+        comments: 1, // [{ _id, userId, nickname, content, createdAt, updatedAt }]
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ]);
+};

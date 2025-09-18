@@ -1,14 +1,14 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { BadRequestError } from "../errors";
-import { MeetCreateRequestDto } from "../dtos";
+import { MeetCreateRequestDto, MeetListOpts } from "../dtos";
 import { meetService } from "../services";
 
 // 모집글 목록 조회
 export const getMeetList = async (req: Request, res: Response) => {
-  const { skip, limit, keyword } = req.query; // 내용, 제목, 작성자로 검색
+  const { skip, limit, location, workout_type } = req.query; // 내용, 제목, 작성자로 검색
 
-  console.log(skip, limit, keyword);
+  console.log(skip, limit, location, workout_type);
 
   if (!skip) {
     throw new BadRequestError("skip 필수");
@@ -19,13 +19,25 @@ export const getMeetList = async (req: Request, res: Response) => {
   }
 
   try {
+    // sort 삭제함 주의할 것
+    const opts = {
+      match: {
+        location: location?.toString(),
+        workout_type: workout_type?.toString(),
+      },
+      skip: skip ? Number(skip.toString()) : undefined,
+      limit: limit ? Number(limit.toString()) : undefined,
+    } as MeetListOpts;
+
+    const meets = await meetService.getMeetList(opts);
+
     res.status(200).json({
       success: true,
       message: "모집글 목록 조회",
       code: "GET_MEET_LIST_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        meets: [],
+        meets,
       },
     });
   } catch (error) {
