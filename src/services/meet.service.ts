@@ -317,10 +317,12 @@ class MeetService {
       const isMember = crews.some((id) => id.equals(userId));
 
       if (isMember) {
-        // ✅ 세션 전파
+        if (meet.userId.equals(userId)) {
+          throw new ForbiddenError("작성자의 참여 취소 불가");
+        }
+
         await this.removeToCrews(meetId, userId, session);
       } else {
-        // ✅ 세션 전파
         await this.addToCrews(meetId, userId, session);
       }
 

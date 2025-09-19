@@ -49,7 +49,9 @@ class MeetRepository {
     session?: ClientSession
   ): Promise<MeetState | null> {
     try {
-      return await Meet.findById({ _id: meetId }, { lean: true, session });
+      return await Meet.findById({ _id: meetId }, undefined, {
+        session,
+      }).lean();
     } catch (error) {
       throw mongoDBErrorHandler("getMeetAsDoc", error);
     }
