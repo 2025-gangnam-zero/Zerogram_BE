@@ -845,7 +845,7 @@ export async function aggregateGetCommentById(
         let: { uid: "$userId" },
         pipeline: [
           { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-          { $project: { _id: 0, nickname: 1 } },
+          { $project: { _id: 0, nickname: 1, profile_image: 1 } },
         ],
         as: "authorInfo",
       },
@@ -854,6 +854,9 @@ export async function aggregateGetCommentById(
       $addFields: {
         nickname: {
           $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
+        },
+        profile_image: {
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }, ""],
         },
       },
     },
@@ -865,6 +868,7 @@ export async function aggregateGetCommentById(
         _id: 1,
         userId: 1,
         nickname: 1,
+        profile_image: 1,
         content: 1,
         createdAt: 1,
         updatedAt: 1,
