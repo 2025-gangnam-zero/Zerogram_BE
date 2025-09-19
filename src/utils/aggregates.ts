@@ -670,7 +670,7 @@ export async function aggregateGetMeetById(
         let: { uid: "$userId" },
         pipeline: [
           { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-          { $project: { _id: 0, nickname: 1 } },
+          { $project: { _id: 0, nickname: 1, profile_image: 1 } },
         ],
         as: "authorInfo",
       },
@@ -679,6 +679,9 @@ export async function aggregateGetMeetById(
       $addFields: {
         nickname: {
           $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
+        },
+        profile_image: {
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }, null],
         },
       },
     },
@@ -692,7 +695,9 @@ export async function aggregateGetMeetById(
         let: { crewIds: "$crewIds" },
         pipeline: [
           { $match: { $expr: { $in: ["$_id", "$$crewIds"] } } },
-          { $project: { _id: 0, userId: "$_id", nickname: 1 } },
+          {
+            $project: { _id: 0, userId: "$_id", nickname: 1, profile_image: 1 },
+          },
         ],
         as: "crewDocs",
       },
@@ -740,7 +745,7 @@ export async function aggregateGetMeetById(
               let: { uid: "$userId" },
               pipeline: [
                 { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-                { $project: { _id: 0, nickname: 1 } },
+                { $project: { _id: 0, nickname: 1, profile_image: 1 } },
               ],
               as: "u",
             },
@@ -748,6 +753,9 @@ export async function aggregateGetMeetById(
           {
             $addFields: {
               nickname: { $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""] },
+              profile_image: {
+                $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }, null],
+              },
             },
           },
           {
@@ -756,6 +764,7 @@ export async function aggregateGetMeetById(
               _id: 1,
               userId: 1,
               nickname: 1,
+              profile_image: 1,
               content: 1,
               createdAt: 1,
               updatedAt: 1,
@@ -803,6 +812,7 @@ export async function aggregateGetMeetById(
         _id: 1,
         userId: 1,
         nickname: 1,
+        profile_image: 1,
         title: 1,
         description: 1,
         images: 1,
