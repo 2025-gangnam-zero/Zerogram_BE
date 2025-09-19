@@ -503,7 +503,7 @@ export const aggregateGetMeetList = async ({
           $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
         },
         profile_image: {
-          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }],
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }, null],
         },
       },
     },
@@ -576,7 +576,7 @@ export const aggregateGetMeetList = async ({
             $addFields: {
               nickname: { $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""] },
               profile_image: {
-                $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }],
+                $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }, null],
               },
             },
           },
