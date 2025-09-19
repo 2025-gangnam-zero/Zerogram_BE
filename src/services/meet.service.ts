@@ -150,10 +150,14 @@ class MeetService {
             }
           }
 
-          // (대안) 댓글이 meetId를 참조한다면 훨씬 간단하게:
-          // await commentService.deleteAllByMeetId(meetId, session);
+          // 4) 모집글의 이미지 삭제
+          if (meet.images && meet.images.length > 0) {
+            await Promise.all(
+              meet.images.map((ex) => deleteImage(ex.split(".com/")[1]))
+            );
+          }
 
-          // 4) 모집글 삭제
+          // 5) 모집글 삭제
           await this.deleteMeetById(meetId, session);
         },
         {
