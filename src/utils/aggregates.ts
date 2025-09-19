@@ -582,7 +582,6 @@ export const aggregateGetMeetList = async ({
           },
           {
             $project: {
-              u: 0,
               _id: 1,
               userId: 1,
               nickname: 1,
@@ -760,7 +759,6 @@ export async function aggregateGetMeetById(
           },
           {
             $project: {
-              u: 0,
               _id: 1,
               userId: 1,
               nickname: 1,
