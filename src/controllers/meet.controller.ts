@@ -317,6 +317,7 @@ export const toggleCrew = async (req: Request, res: Response) => {
         ? {
             userId: user._id,
             nickname: user.nickname,
+            profile_image: user.profile_image,
           }
         : undefined,
     });
