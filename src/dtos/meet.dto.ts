@@ -15,6 +15,7 @@ export interface MeetResponseDto {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   nickname: string;
+  profile_image?: string;
   title: string;
   description: string;
   images?: string[];
@@ -36,6 +37,7 @@ export interface CommentResponseDto {
   _id: Types.ObjectId;
   userId: Types.ObjectId;
   nickname: string;
+  profile_image?: string;
   content: string;
   createdAt: Date;
   updatedAt: Date;

@@ -479,20 +479,20 @@ export const aggregateGetMeetList = async ({
   limit = 20,
   sort = { createdAt: -1, _id: -1 },
 }: MeetListOpts = {}) => {
-  return await Meet.aggregate([
+  return await Meet.aggregate<MeetResponseDto>([
     { $match: match },
     { $sort: sort },
     { $skip: skip },
     { $limit: limit },
 
-    // 작성자 닉네임
+    // 작성자 닉네임, 프로필 사진
     {
       $lookup: {
         from: "users",
         let: { uid: "$userId" },
         pipeline: [
           { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-          { $project: { _id: 0, nickname: 1 } },
+          { $project: { _id: 0, nickname: 1, profile_image: 1 } },
         ],
         as: "authorInfo",
       },
@@ -501,6 +501,9 @@ export const aggregateGetMeetList = async ({
       $addFields: {
         nickname: {
           $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
+        },
+        profile_image: {
+          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }],
         },
       },
     },
@@ -514,7 +517,9 @@ export const aggregateGetMeetList = async ({
         let: { crewIds: "$crewIds" },
         pipeline: [
           { $match: { $expr: { $in: ["$_id", "$$crewIds"] } } },
-          { $project: { _id: 0, userId: "$_id", nickname: 1 } },
+          {
+            $project: { _id: 0, userId: "$_id", nickname: 1, profile_image: 1 },
+          },
         ],
         as: "crewDocs",
       },
@@ -562,7 +567,7 @@ export const aggregateGetMeetList = async ({
               let: { uid: "$userId" },
               pipeline: [
                 { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-                { $project: { _id: 0, nickname: 1 } },
+                { $project: { _id: 0, nickname: 1, profile_image: 1 } },
               ],
               as: "u",
             },
@@ -570,6 +575,9 @@ export const aggregateGetMeetList = async ({
           {
             $addFields: {
               nickname: { $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""] },
+              profile_image: {
+                $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }],
+              },
             },
           },
           {
@@ -578,6 +586,7 @@ export const aggregateGetMeetList = async ({
               _id: 1,
               userId: 1,
               nickname: 1,
+              profile_image: 1,
               content: 1,
               createdAt: 1,
               updatedAt: 1,
@@ -626,6 +635,7 @@ export const aggregateGetMeetList = async ({
         _id: 1,
         userId: 1,
         nickname: 1,
+        profile_image: 1,
         title: 1,
         description: 1,
         images: 1,

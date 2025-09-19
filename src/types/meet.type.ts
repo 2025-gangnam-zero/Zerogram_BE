@@ -30,4 +30,5 @@ export type LocationType = "강남구" | "서초구";
 export interface CrewType {
   userId: Types.ObjectId;
   nickname: string;
+  profile_image?: string;
 }
