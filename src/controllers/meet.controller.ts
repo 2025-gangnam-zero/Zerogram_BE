@@ -108,7 +108,7 @@ export const getMeet = async (req: Request, res: Response) => {
   try {
     const meetId = new mongoose.Types.ObjectId(meetid);
 
-    console.log(meetId);
+    const meet = await meetService.getMeetById(meetId);
 
     res.status(200).json({
       success: true,
@@ -116,7 +116,7 @@ export const getMeet = async (req: Request, res: Response) => {
       code: "GET_MEET_SUCCEEDED",
       timestamp: new Date().toISOString(),
       data: {
-        meet: {},
+        meet,
       },
     });
   } catch (error) {
