@@ -24,3 +24,9 @@ export const deleteImage = async (key: string) => {
   );
   console.log("Success. Object deleted.", data);
 };
+
+export const deleteImages = async (keys: string[]) => {
+  await Promise.all(
+    keys.map((location) => deleteImage(location.split(".com/")[1]))
+  );
+};

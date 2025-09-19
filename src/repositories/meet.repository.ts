@@ -35,9 +35,12 @@ class MeetRepository {
   }
 
   // 모집글 조회
-  async getMeetById(meetId: Types.ObjectId): Promise<MeetResponseDto | null> {
+  async getMeetById(
+    meetId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<MeetResponseDto | null> {
     try {
-      return await aggregateGetMeetById(meetId);
+      return await aggregateGetMeetById(meetId, session);
     } catch (error) {
       throw mongoDBErrorHandler("getMeetById", error);
     }

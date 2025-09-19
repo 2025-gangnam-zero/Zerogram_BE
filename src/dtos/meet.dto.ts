@@ -49,6 +49,7 @@ export interface MeetUpdateRequestDto {
   description?: string;
   existingImages?: string[];
   images?: string[];
+  newImages?: string[];
   workout_type?: WorkoutType;
   location?: LocationType;
 }
@@ -57,9 +58,9 @@ export interface MeetUpdateRequestDto {
 export interface MeetUpdateDto {
   title?: string;
   description?: string;
-  images?: string[];
   workout_type?: WorkoutType;
   location?: LocationType;
+  images?: string[];
 }
 
 // 클라에서 받아야 하는 정보

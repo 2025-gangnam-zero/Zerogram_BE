@@ -15,7 +15,7 @@ import {
 import { meetRepository } from "../repositories";
 import { userService, commentService } from "../services";
 import { MeetState } from "../types";
-import { deleteImage } from "../utils";
+import { deleteImage, deleteImages, toArray } from "../utils";
 import { IMAGE_MAX_COUNT } from "../constants";
 
 class MeetService {
@@ -54,9 +54,12 @@ class MeetService {
   }
 
   // 모집글 조회
-  async getMeetById(meetId: Types.ObjectId): Promise<MeetResponseDto> {
+  async getMeetById(
+    meetId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<MeetResponseDto> {
     try {
-      const meet = await meetRepository.getMeetById(meetId);
+      const meet = await meetRepository.getMeetById(meetId, session);
       if (!meet) {
         throw new InternalServerError("모집글 조회 실패");
       }
@@ -175,10 +178,15 @@ class MeetService {
   // 모집글 수정
   async updateMeet(
     meetId: Types.ObjectId,
-    meetUpdate: MeetUpdateDto
+    meetUpdate: MeetUpdateDto,
+    session?: ClientSession
   ): Promise<void> {
     try {
-      const result = await meetRepository.updateMeetById(meetId, meetUpdate);
+      const result = await meetRepository.updateMeetById(
+        meetId,
+        meetUpdate,
+        session
+      );
 
       if (result.matchedCount === 0) {
         throw new NotFoundError("모집글 조회 실패");
@@ -198,41 +206,61 @@ class MeetService {
     meetUpdate: MeetUpdateRequestDto,
     userId: Types.ObjectId
   ): Promise<MeetResponseDto> {
+    const session = await mongoose.startSession();
     try {
+      session.startTransaction();
+
       // 권한 확인
-      await this.checkAuthorMatched(meetId, userId);
+      await this.checkAuthorMatched(meetId, userId, session);
 
-      const meet = await this.getMeetAsDoc(meetId);
+      const { existingImages, newImages, images, ...rest } = meetUpdate;
 
-      const { existingImages, ...rest } = meetUpdate;
+      // 남은 이미지들
+      const remainedImages = toArray(images);
 
-      const originImageNums = meet.images?.length ?? 0;
+      // 삭제될 이미지들
+      const deletedImages = toArray(existingImages);
 
-      const existingImageNums = existingImages?.length ?? 0;
+      // 추가된 이미지들
+      const addedImages = toArray(newImages);
 
-      const newImageNums = rest.images?.length ?? 0;
+      // 총 이미지 개수
+      const totalImageNum = remainedImages.length + addedImages.length;
 
-      if (
-        originImageNums - existingImageNums + newImageNums >
-        IMAGE_MAX_COUNT
-      ) {
+      // 총 이미지 개수가 제한 개수보다 큰 경우
+      if (totalImageNum > IMAGE_MAX_COUNT) {
+        // 추가된 이미지 삭제
+        if (addedImages.length > 0) {
+          await deleteImages(addedImages);
+        }
         throw new BadRequestError("이미지 업로드 최대 개수 초과");
       }
 
       // 기존 이미지 삭제
-      if (existingImages && existingImages.length > 0) {
-        await Promise.all(
-          existingImages?.map((ex) => deleteImage(ex.split(".com/")[1]))
-        );
+      if (deletedImages.length > 0) {
+        await deleteImages(deletedImages);
       }
 
-      // 모집글 수정
-      await this.updateMeet(meetId, rest);
+      const filtered = (remainedImages ?? []).filter(
+        (i) => !(deletedImages ?? []).includes(i)
+      );
+      const updatedImages = [...filtered, ...(addedImages ?? [])];
 
+      // 모집글 수정
+      await this.updateMeet(
+        meetId,
+        { ...rest, images: updatedImages },
+        session
+      );
+
+      await session.commitTransaction();
       // 수정된 모집글 조회
-      return await this.getMeetById(meetId);
+      return await this.getMeetById(meetId, session);
     } catch (error) {
+      await session.abortTransaction();
       throw error;
+    } finally {
+      await session.endSession();
     }
   }
 

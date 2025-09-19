@@ -130,9 +130,14 @@ export const updateMeet = async (req: Request, res: Response) => {
   const { meetid } = req.params;
   const meetUpdate = req.body as MeetUpdateRequestDto;
 
+  console.log("남는 이미지들", meetUpdate.images);
+  console.log("삭제될 이미지들", meetUpdate.existingImages);
+
   // files 안전 처리
   const files = (req.files as Express.MulterS3.File[]) ?? [];
   const imageUrls = files.map((f) => (f as any).location as string);
+
+  console.log("새 이미지들", imageUrls);
 
   // 빈 값(undefined/null/'') 제거해서 부분 수정만 반영
   const cleaned = Object.fromEntries(
@@ -153,7 +158,7 @@ export const updateMeet = async (req: Request, res: Response) => {
       meetId,
       // 업로드가 있을 때만 images를 덮어씀 (없으면 기존 이미지 유지)
       (imageUrls.length > 0
-        ? { ...cleaned, images: imageUrls }
+        ? { ...cleaned, newImages: imageUrls }
         : cleaned) as MeetUpdateRequestDto,
       userId
     );

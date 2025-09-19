@@ -656,173 +656,184 @@ export const aggregateGetMeetList = async ({
  * - comments: ObjectId[] → [{ _id, userId, nickname, content, createdAt, updatedAt }] + 원래 순서 보존
  */
 export async function aggregateGetMeetById(
-  meetId: Types.ObjectId
+  meetId: Types.ObjectId,
+  session?: ClientSession
 ): Promise<MeetResponseDto | null> {
-  const [doc] = await Meet.aggregate<MeetResponseDto>([
-    { $match: { _id: meetId } },
-    { $limit: 1 },
+  const [doc] = await Meet.aggregate<MeetResponseDto>(
+    [
+      { $match: { _id: meetId } },
+      { $limit: 1 },
 
-    // --- 작성자 닉네임 ---
-    {
-      $lookup: {
-        from: "users",
-        let: { uid: "$userId" },
-        pipeline: [
-          { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-          { $project: { _id: 0, nickname: 1, profile_image: 1 } },
-        ],
-        as: "authorInfo",
-      },
-    },
-    {
-      $addFields: {
-        nickname: {
-          $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
-        },
-        profile_image: {
-          $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }, null],
+      // --- 작성자 닉네임 ---
+      {
+        $lookup: {
+          from: "users",
+          let: { uid: "$userId" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+            { $project: { _id: 0, nickname: 1, profile_image: 1 } },
+          ],
+          as: "authorInfo",
         },
       },
-    },
-    { $project: { authorInfo: 0 } },
-
-    // --- crews 순서 보존 ---
-    { $addFields: { crewIds: { $ifNull: ["$crews", []] } } },
-    {
-      $lookup: {
-        from: "users",
-        let: { crewIds: "$crewIds" },
-        pipeline: [
-          { $match: { $expr: { $in: ["$_id", "$$crewIds"] } } },
-          {
-            $project: { _id: 0, userId: "$_id", nickname: 1, profile_image: 1 },
+      {
+        $addFields: {
+          nickname: {
+            $ifNull: [{ $arrayElemAt: ["$authorInfo.nickname", 0] }, ""],
           },
-        ],
-        as: "crewDocs",
+          profile_image: {
+            $ifNull: [{ $arrayElemAt: ["$authorInfo.profile_image", 0] }, null],
+          },
+        },
       },
-    },
-    {
-      $addFields: {
-        crews: {
-          $map: {
-            input: "$crewIds",
-            as: "cid",
-            in: {
-              $first: {
-                $filter: {
-                  input: "$crewDocs",
-                  as: "c",
-                  cond: { $eq: ["$$c.userId", "$$cid"] },
+      { $project: { authorInfo: 0 } },
+
+      // --- crews 순서 보존 ---
+      { $addFields: { crewIds: { $ifNull: ["$crews", []] } } },
+      {
+        $lookup: {
+          from: "users",
+          let: { crewIds: "$crewIds" },
+          pipeline: [
+            { $match: { $expr: { $in: ["$_id", "$$crewIds"] } } },
+            {
+              $project: {
+                _id: 0,
+                userId: "$_id",
+                nickname: 1,
+                profile_image: 1,
+              },
+            },
+          ],
+          as: "crewDocs",
+        },
+      },
+      {
+        $addFields: {
+          crews: {
+            $map: {
+              input: "$crewIds",
+              as: "cid",
+              in: {
+                $first: {
+                  $filter: {
+                    input: "$crewDocs",
+                    as: "c",
+                    cond: { $eq: ["$$c.userId", "$$cid"] },
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    // 조인 누락 방지용 null 제거 + 임시 필드 정리
-    {
-      $addFields: {
-        crews: {
-          $filter: { input: "$crews", as: "x", cond: { $ne: ["$$x", null] } },
+      // 조인 누락 방지용 null 제거 + 임시 필드 정리
+      {
+        $addFields: {
+          crews: {
+            $filter: { input: "$crews", as: "x", cond: { $ne: ["$$x", null] } },
+          },
         },
       },
-    },
-    { $project: { crewDocs: 0, crewIds: 0 } },
+      { $project: { crewDocs: 0, crewIds: 0 } },
 
-    // --- comments 순서 보존 ---
-    { $addFields: { commentIds: { $ifNull: ["$comments", []] } } },
-    {
-      $lookup: {
-        from: "comments",
-        let: { cids: "$commentIds" },
-        pipeline: [
-          { $match: { $expr: { $in: ["$_id", "$$cids"] } } },
-          {
-            $lookup: {
-              from: "users",
-              let: { uid: "$userId" },
-              pipeline: [
-                { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
-                { $project: { _id: 0, nickname: 1, profile_image: 1 } },
-              ],
-              as: "u",
-            },
-          },
-          {
-            $addFields: {
-              nickname: { $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""] },
-              profile_image: {
-                $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }, null],
+      // --- comments 순서 보존 ---
+      { $addFields: { commentIds: { $ifNull: ["$comments", []] } } },
+      {
+        $lookup: {
+          from: "comments",
+          let: { cids: "$commentIds" },
+          pipeline: [
+            { $match: { $expr: { $in: ["$_id", "$$cids"] } } },
+            {
+              $lookup: {
+                from: "users",
+                let: { uid: "$userId" },
+                pipeline: [
+                  { $match: { $expr: { $eq: ["$_id", "$$uid"] } } },
+                  { $project: { _id: 0, nickname: 1, profile_image: 1 } },
+                ],
+                as: "u",
               },
             },
-          },
-          {
-            $project: {
-              _id: 1,
-              userId: 1,
-              nickname: 1,
-              profile_image: 1,
-              content: 1,
-              createdAt: 1,
-              updatedAt: 1,
+            {
+              $addFields: {
+                nickname: {
+                  $ifNull: [{ $arrayElemAt: ["$u.nickname", 0] }, ""],
+                },
+                profile_image: {
+                  $ifNull: [{ $arrayElemAt: ["$u.profile_image", 0] }, null],
+                },
+              },
             },
-          },
-        ],
-        as: "commentDocs",
+            {
+              $project: {
+                _id: 1,
+                userId: 1,
+                nickname: 1,
+                profile_image: 1,
+                content: 1,
+                createdAt: 1,
+                updatedAt: 1,
+              },
+            },
+          ],
+          as: "commentDocs",
+        },
       },
-    },
-    {
-      $addFields: {
-        comments: {
-          $map: {
-            input: "$commentIds",
-            as: "cid",
-            in: {
-              $first: {
-                $filter: {
-                  input: "$commentDocs",
-                  as: "c",
-                  cond: { $eq: ["$$c._id", "$$cid"] },
+      {
+        $addFields: {
+          comments: {
+            $map: {
+              input: "$commentIds",
+              as: "cid",
+              in: {
+                $first: {
+                  $filter: {
+                    input: "$commentDocs",
+                    as: "c",
+                    cond: { $eq: ["$$c._id", "$$cid"] },
+                  },
                 },
               },
             },
           },
         },
       },
-    },
-    {
-      $addFields: {
-        comments: {
-          $filter: {
-            input: "$comments",
-            as: "x",
-            cond: { $ne: ["$$x", null] },
+      {
+        $addFields: {
+          comments: {
+            $filter: {
+              input: "$comments",
+              as: "x",
+              cond: { $ne: ["$$x", null] },
+            },
           },
         },
       },
-    },
-    { $project: { commentDocs: 0, commentIds: 0 } },
+      { $project: { commentDocs: 0, commentIds: 0 } },
 
-    // --- 최종 형태 ---
-    {
-      $project: {
-        _id: 1,
-        userId: 1,
-        nickname: 1,
-        profile_image: 1,
-        title: 1,
-        description: 1,
-        images: 1,
-        workout_type: 1,
-        location: 1,
-        crews: 1,
-        comments: 1,
-        createdAt: 1,
-        updatedAt: 1,
+      // --- 최종 형태 ---
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          nickname: 1,
+          profile_image: 1,
+          title: 1,
+          description: 1,
+          images: 1,
+          workout_type: 1,
+          location: 1,
+          crews: 1,
+          comments: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        },
       },
-    },
-  ]).exec();
+    ],
+    { session }
+  ).exec();
 
   return doc ?? null;
 }
