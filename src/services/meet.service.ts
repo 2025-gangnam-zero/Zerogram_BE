@@ -6,10 +6,17 @@ import {
   MeetUpdateDto,
   MeetUpdateRequestDto,
 } from "../dtos";
-import { ForbiddenError, InternalServerError, NotFoundError } from "../errors";
+import {
+  BadRequestError,
+  ForbiddenError,
+  InternalServerError,
+  NotFoundError,
+} from "../errors";
 import { meetRepository } from "../repositories";
 import { userService, commentService } from "../services";
 import { MeetState } from "../types";
+import { deleteImage } from "../utils";
+import { IMAGE_MAX_COUNT } from "../constants";
 
 class MeetService {
   // 모집글 생성
@@ -116,10 +123,7 @@ class MeetService {
   }
 
   // 모집글 삭제 (권한검사 + 댓글 일괄 삭제 + 모집글 삭제) - 트랜잭션 적용
-  async deleteMeetWithAuthorization(
-    meetId: Types.ObjectId,
-    userId: Types.ObjectId
-  ) {
+  async deleteMeetWithAuth(meetId: Types.ObjectId, userId: Types.ObjectId) {
     const session = await mongoose.startSession();
     try {
       await session.withTransaction(
@@ -194,8 +198,32 @@ class MeetService {
       // 권한 확인
       await this.checkAuthorMatched(meetId, userId);
 
+      const meet = await this.getMeetAsDoc(meetId);
+
+      const { existingImages, ...rest } = meetUpdate;
+
+      const originImageNums = meet.images?.length ?? 0;
+
+      const existingImageNums = existingImages?.length ?? 0;
+
+      const newImageNums = rest.images?.length ?? 0;
+
+      if (
+        originImageNums - existingImageNums + newImageNums >
+        IMAGE_MAX_COUNT
+      ) {
+        throw new BadRequestError("이미지 업로드 최대 개수 초과");
+      }
+
+      // 기존 이미지 삭제
+      if (existingImages && existingImages.length > 0) {
+        await Promise.all(
+          existingImages?.map((ex) => deleteImage(ex.split(".com/")[1]))
+        );
+      }
+
       // 모집글 수정
-      await this.updateMeet(meetId, meetUpdate);
+      await this.updateMeet(meetId, rest);
 
       // 수정된 모집글 조회
       return await this.getMeetById(meetId);

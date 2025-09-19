@@ -12,6 +12,7 @@ import {
 } from "../controllers";
 import { authChecker } from "../middlewares";
 import { upload } from "../utils";
+import { IMAGE_MAX_COUNT } from "../constants";
 
 export default () => {
   const router = Router();
@@ -20,7 +21,12 @@ export default () => {
   router.get("/meets", authChecker, getMeetList);
 
   // 모집글 생성
-  router.post("/meets", authChecker, upload.array("images", 3), createMeet);
+  router.post(
+    "/meets",
+    authChecker,
+    upload.array("images", IMAGE_MAX_COUNT),
+    createMeet
+  );
 
   // 모집글 상세 조회
   router.get("/meets/:meetid", authChecker, getMeet);
@@ -29,7 +35,7 @@ export default () => {
   router.patch(
     "/meets/:meetid",
     authChecker,
-    upload.array("images", 3),
+    upload.array("newImages", IMAGE_MAX_COUNT),
     updateMeet
   );
 

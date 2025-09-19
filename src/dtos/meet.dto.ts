@@ -45,6 +45,7 @@ export interface CommentResponseDto {
 export interface MeetUpdateRequestDto {
   title?: string;
   description?: string;
+  existingImages?: string[];
   images?: string[];
   workout_type?: WorkoutType;
   location?: LocationType;

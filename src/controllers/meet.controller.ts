@@ -183,7 +183,7 @@ export const deleteMeet = async (req: Request, res: Response) => {
 
     console.log(userId, meetId);
 
-    await meetService.deleteMeetWithAuthorization(meetId, userId);
+    await meetService.deleteMeetWithAuth(meetId, userId);
 
     res.status(200).json({
       success: true,
