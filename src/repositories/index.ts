@@ -3,6 +3,8 @@ import meetingRepository from "./meeting.repository";
 import userRepository from "./user.repository";
 import userSessionRepository from "./user-session.repository";
 import workoutRepository from "./workout.repository";
+import meetRepository from "./meet.repository";
+import commentRepository from "./comment.repository";
 
 export {
   dietRepository,
@@ -10,4 +12,6 @@ export {
   userRepository,
   userSessionRepository,
   workoutRepository,
+  meetRepository,
+  commentRepository,
 };
