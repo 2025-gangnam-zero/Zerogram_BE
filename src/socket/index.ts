@@ -1,6 +1,8 @@
 import type { Server as HttpServer } from "http";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import { registerChatNamespace } from "./namespaces/chat";
+import { userService, userSessionService } from "../services";
 
 export type InitSocketOptions = {
   path?: string;
@@ -22,19 +24,25 @@ export const initSocket = (
   const chat = io.of("/chat");
 
   // ① 세션/유저 스냅샷 주입
-  chat.use((socket, next) => {
+  chat.use(async (socket, next) => {
     const sessionId = socket.handshake.auth?.sessionId as string | undefined;
     if (!sessionId || sessionId.length < 8) {
       return next(new Error("UNAUTHORIZED: sessionId missing or invalid"));
     }
     (socket.data as any).sessionId = sessionId;
 
-    // TODO: 실제 DB/캐시에서 조회해 채워 넣으세요.
-    // 최소 기본 형태만 먼저 세팅해도 됩니다.
+    const sessionid = new mongoose.Types.ObjectId(sessionId);
+
+    const { userId } = await userSessionService.getUserSessionById(sessionid);
+
+    const { _id, nickname, profile_image } = await userService.getUserById(
+      userId
+    );
+    //--
     (socket.data as any).user = {
-      id: sessionId,
-      name: `user-${sessionId.slice(-4)}`,
-      avatarUrl: undefined,
+      id: _id,
+      name: nickname,
+      avatarUrl: profile_image,
     };
 
     next();

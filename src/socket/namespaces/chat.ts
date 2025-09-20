@@ -21,6 +21,7 @@ const makeId = () =>
 export const registerChatNamespace = (nsp: Namespace) => {
   nsp.on("connection", (socket: Socket) => {
     const sid = (socket.data as any).sessionId as string;
+
     const author = ((socket.data as any).user || { id: sid }) as ChatUser;
 
     console.log(`[chat] connected id=${socket.id} sid=${sid}`);
