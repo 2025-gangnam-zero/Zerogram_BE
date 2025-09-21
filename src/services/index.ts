@@ -5,6 +5,9 @@ import userService from "./user.service";
 import workoutService from "./workout.service";
 import meetService from "./meet.service";
 import commentService from "./comment.service";
+import roomService from "./room.service";
+import roomMembershipService from "./room-membership.service";
+import messageService from "./message.service";
 
 export {
   dietService,
@@ -14,4 +17,7 @@ export {
   workoutService,
   meetService,
   commentService,
+  roomService,
+  roomMembershipService,
+  messageService,
 };

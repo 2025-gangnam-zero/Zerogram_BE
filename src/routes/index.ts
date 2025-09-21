@@ -4,6 +4,7 @@ import userRoute from "./user.route";
 import adminRoute from "./admin.route";
 import meetingRoute from "./meeting.route";
 import meetRoute from "./meet.route";
+import roomRoute from "./room.route";
 
 export default () => {
   const router = Router();
@@ -13,6 +14,7 @@ export default () => {
   router.use("/", meetingRoute());
   router.use("/", adminRoute());
   router.use("/", meetRoute());
+  router.use("/", roomRoute());
 
   return router;
 };
