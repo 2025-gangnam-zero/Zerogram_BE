@@ -247,6 +247,7 @@ export const getUnreadCount = async (req: Request, res: Response) => {
 
 // 메시지 히스토리
 export const getMessages = async (req: Request, res: Response) => {
+  const userId = req.user._id;
   const { roomid } = req.params;
   const { beforeId, beforeSeq, limit } = req.query;
 
@@ -258,7 +259,7 @@ export const getMessages = async (req: Request, res: Response) => {
 
   try {
     const roomId = new mongoose.Types.ObjectId(roomid);
-    const items = await messageService.getHistory(roomId, {
+    const items = await messageService.getHistory(roomId, userId, {
       beforeSeq: typeof beforeSeq === "string" ? Number(beforeSeq) : undefined,
       beforeId:
         typeof beforeId === "string" && beforeId.trim()

@@ -49,7 +49,13 @@ class MessageRepository {
       beforeSeq,
       beforeId,
       limit = 30,
-    }: { beforeSeq?: number; beforeId?: Types.ObjectId; limit?: number },
+      afterJoinedAt, // ✅ 추가: Date 또는 string(ISO)
+    }: {
+      beforeSeq?: number;
+      beforeId?: Types.ObjectId;
+      limit?: number;
+      afterJoinedAt?: Date | string; // ✅
+    },
     session?: ClientSession
   ): Promise<MessageState[]> {
     try {
@@ -61,6 +67,18 @@ class MessageRepository {
 
       const query: any = { roomId };
       if (typeof seqCut === "number") query.seq = { $lt: seqCut };
+
+      // ✅ 핵심: 가입 시각 이후만
+      if (afterJoinedAt) {
+        const iso =
+          typeof afterJoinedAt === "string"
+            ? afterJoinedAt
+            : afterJoinedAt.toISOString();
+        // createdAtIso가 ISO 문자열이면 문자열 비교로 OK
+        // query.createdAtIso = { $gt: iso };
+        // 만약 Message에 createdAt(Date)도 있다면 아래를 쓰는 게 더 확실:
+        query.createdAt = { $gt: new Date(iso) };
+      }
 
       return await Message.find(query)
         .sort({ seq: -1 })

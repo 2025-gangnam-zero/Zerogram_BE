@@ -102,10 +102,22 @@ class MessageService {
   // 히스토리 조회 (커서: beforeId 또는 beforeSeq)
   async getHistory(
     roomId: Types.ObjectId,
+    userId: Types.ObjectId,
     opts: { beforeId?: Types.ObjectId; beforeSeq?: number; limit?: number } = {}
   ): Promise<{ items: ChatMessageDTO[] }> {
     try {
-      const items = await messageRepository.findByRoom(roomId, opts, undefined);
+      const membership = await roomMembershipRepository.findOne(
+        roomId,
+        userId,
+        undefined
+      );
+
+      const joinedAt = membership?.joinedAt;
+      const items = await messageRepository.findByRoom(
+        roomId,
+        { ...opts, afterJoinedAt: joinedAt },
+        undefined
+      );
       return { items: items.map(toDTO) };
     } catch (error) {
       throw error;
