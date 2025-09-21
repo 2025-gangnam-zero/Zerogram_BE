@@ -37,12 +37,13 @@ export const getMyRooms = async (req: Request, res: Response) => {
 
 // 방 상세
 export const getRoom = async (req: Request, res: Response) => {
+  const userId = req.user._id;
   const { roomid } = req.params;
   if (!roomid) throw new BadRequestError("roomid 필수");
 
   try {
     const roomId = new mongoose.Types.ObjectId(roomid);
-    const room = await roomService.getRoom(roomId);
+    const room = await roomService.getRoom(roomId, userId);
 
     res.status(200).json({
       success: true,
@@ -58,12 +59,13 @@ export const getRoom = async (req: Request, res: Response) => {
 
 // 공지 조회
 export const getRoomNotice = async (req: Request, res: Response) => {
+  const userId = req.user._id;
   const { roomid } = req.params;
   if (!roomid) throw new BadRequestError("roomid 필수");
 
   try {
     const roomId = new mongoose.Types.ObjectId(roomid);
-    const room = await roomService.getRoom(roomId);
+    const room = await roomService.getRoom(roomId, userId);
     res.status(200).json({
       success: true,
       message: "공지 조회 성공",
@@ -99,6 +101,26 @@ export const updateRoomNotice = async (req: Request, res: Response) => {
   } catch (error) {
     throw error;
   }
+};
+
+// 공지 삭제
+export const deleteRoomNotice = async (req: Request, res: Response) => {
+  const { roomid } = req.params;
+  const user = req.user;
+  if (!roomid) throw new BadRequestError("roomid 필수");
+
+  const notice = await roomService.clearNotice(
+    new Types.ObjectId(roomid),
+    new Types.ObjectId(user._id)
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "공지 삭제 성공",
+    code: "ROOM_NOTICE_DELETE_SUCCEEDED",
+    timestamp: new Date().toISOString(),
+    data: notice, // { enabled:false, ... } 최신 상태 반환
+  });
 };
 
 // 방 나가기

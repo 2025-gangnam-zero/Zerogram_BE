@@ -152,6 +152,26 @@ class RoomRepository {
     }
   }
 
+  // 공지 삭제
+  async clearNotice(
+    roomId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<void> {
+    try {
+      await Room.updateOne(
+        { _id: roomId },
+        {
+          $unset: { "notice.text": "", "notice.authorId": "" },
+          $set: { "notice.enabled": false, "notice.updatedAt": new Date() },
+          $currentDate: { updatedAt: true },
+        },
+        { session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("RoomRepository.clearNotice", error);
+    }
+  }
+
   // 내 방 목록(사이드바) 집계
   async aggregateMineRooms(
     userId: Types.ObjectId,

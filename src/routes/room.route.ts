@@ -11,6 +11,7 @@ import {
   getUnreadCount,
   getMessages,
   deleteMessage,
+  deleteRoomNotice,
 } from "../controllers";
 
 export default () => {
@@ -25,6 +26,7 @@ export default () => {
   // 공지
   router.get("/rooms/:roomid/notice", authChecker, getRoomNotice);
   router.put("/rooms/:roomid/notice", authChecker, updateRoomNotice);
+  router.delete("/rooms/:roomid/notice", authChecker, deleteRoomNotice);
 
   // 멤버
   router.get("/rooms/:roomid/members", authChecker, listRoomMembers);
