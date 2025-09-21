@@ -1,4 +1,4 @@
-import mongoose, { Schema } from "mongoose";
+import mongoose, { Schema, Types } from "mongoose";
 import { CommentState, MeetState } from "types/meet.type";
 
 const CommentSchema = new mongoose.Schema<CommentState>(
@@ -49,13 +49,29 @@ const MeetSchema = new mongoose.Schema<MeetState>(
       required: true,
       enum: ["강남구", "서초구"],
     },
+    // ✅ 채팅방과 1:1 링크
+    roomId: {
+      type: Schema.Types.ObjectId,
+      ref: "Room",
+      index: true,
+      unique: true,
+      sparse: true, // 기존 데이터 이행 중 null 허용
+    },
+
+    // ✅ 모집글 참여자 유지
     crews: {
       type: [Schema.Types.ObjectId],
       ref: "User",
       default: function (this: any) {
         return this.userId ? [this.userId] : [];
       },
+      validate: {
+        validator: (arr: Types.ObjectId[]) =>
+          Array.isArray(arr) && new Set(arr.map(String)).size === arr.length,
+        message: "crews 배열에 중복 userId가 있습니다.",
+      },
     },
+
     comments: {
       type: [Schema.Types.ObjectId],
       ref: "Comment",

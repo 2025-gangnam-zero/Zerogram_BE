@@ -1,11 +1,6 @@
 // src/socket/namespaces/chat.ts
 import type { Namespace, Socket } from "socket.io";
-
-type ChatUser = {
-  userId: string;
-  nickname: string;
-  profile_image?: string;
-};
+import { ChatUser } from "types";
 
 type SendPayload = { roomId: string; text: string };
 type SendAck = {
