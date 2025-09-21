@@ -2,9 +2,9 @@
 import type { Namespace, Socket } from "socket.io";
 
 type ChatUser = {
-  id: string;
-  name?: string;
-  avatarUrl?: string;
+  userId: string;
+  nickname: string;
+  profile_image?: string;
 };
 
 type SendPayload = { roomId: string; text: string };
