@@ -273,6 +273,23 @@ class RoomRepository {
       throw mongoDBErrorHandler("RoomRepository.aggregateMineRooms", error);
     }
   }
+
+  // 방 정보 업데이트
+  async updateById(
+    roomId: Types.ObjectId,
+    updatedRoom: { memberCount: number },
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Room.updateOne(
+        { _id: roomId },
+        { $set: updatedRoom },
+        { session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("updateById", error);
+    }
+  }
 }
 
 export default new RoomRepository();

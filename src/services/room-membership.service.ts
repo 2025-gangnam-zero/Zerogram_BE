@@ -1,5 +1,5 @@
 // services/room-membership.service.ts
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import {
   roomMembershipRepository,
   roomRepository,
@@ -7,6 +7,7 @@ import {
 } from "../repositories";
 import { ForbiddenError, NotFoundError } from "../errors";
 import { RoomMembershipState } from "../types";
+import meetService from "./meet.service";
 
 class RoomMembershipService {
   // 멤버십 단건 조회
@@ -101,14 +102,48 @@ class RoomMembershipService {
   }
 
   // 방 나가기
+  // 방 나가기: RoomMembership 제거 + (연결된 모집글이 있으면) crews에서도 제거
   async leaveRoom(
     roomId: Types.ObjectId,
     userId: Types.ObjectId
   ): Promise<void> {
+    const session = await mongoose.startSession();
     try {
-      await roomMembershipRepository.deleteMember(roomId, userId, undefined);
-    } catch (error) {
-      throw error;
+      await session.withTransaction(async () => {
+        // 1) 방 확인
+        const room = await roomRepository.findById(roomId, session);
+        if (!room) throw new NotFoundError("채팅방을 찾을 수 없습니다.");
+
+        // 2) RoomMembership 제거 (멱등)
+        await roomMembershipRepository.deleteMember(roomId, userId, session);
+
+        // 3) 방이 meet와 1:1이면 crews에서도 제거
+        const meetId = (room as any).meetId as Types.ObjectId | undefined;
+        if (meetId) {
+          // 작성자는 본인 모집글에서 나갈 수 없음(기존 규칙 유지)
+          const meet = await meetService.getMeetById(meetId, session);
+          if (!meet)
+            throw new NotFoundError("연결된 모집글을 찾을 수 없습니다.");
+          if (meet.userId?.equals?.(userId)) {
+            throw new ForbiddenError("작성자는 방을 나갈 수 없습니다.");
+          }
+
+          await meetService.removeFromCrews(meetId, userId, session);
+        }
+
+        const count = await roomMembershipRepository.countByRoom(
+          roomId,
+          session
+        );
+        
+        await roomRepository.updateById(
+          roomId,
+          { memberCount: count },
+          session
+        );
+      });
+    } finally {
+      await session.endSession();
     }
   }
 

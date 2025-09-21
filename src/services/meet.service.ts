@@ -364,7 +364,7 @@ class MeetService {
   }
 
   // 참여자 삭제
-  async removeToCrews(
+  async removeFromCrews(
     meetId: Types.ObjectId,
     userId: Types.ObjectId,
     session?: ClientSession
@@ -409,7 +409,7 @@ class MeetService {
           }
 
           // 2) Meet에서 제거
-          await this.removeToCrews(meetId, userId, session);
+          await this.removeFromCrews(meetId, userId, session);
 
           // 3) meetId -> room 조회
           const room = await Room.findOne({ meetId }).session(session);
