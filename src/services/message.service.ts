@@ -18,6 +18,7 @@ export type SendMessageInput = {
 };
 
 export type ChatMessageDTO = {
+  id: string;
   serverId: string;
   roomId: string;
   authorId: string;
@@ -30,6 +31,7 @@ export type ChatMessageDTO = {
 };
 
 const toDTO = (m: MessageState): ChatMessageDTO => ({
+  id: String(m._id), // ← 추가
   serverId: m.serverId,
   roomId: String(m.roomId),
   authorId: String(m.authorId),
