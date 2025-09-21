@@ -114,6 +114,17 @@ class MessageRepository {
       throw mongoDBErrorHandler("MessageRepository.deleteMessage", error);
     }
   }
+
+  async deleteAllByRoomId(
+    roomId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
+    try {
+      return await Message.deleteMany({ roomId }, { session });
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteAllByRoomId", error);
+    }
+  }
 }
 
 export default new MessageRepository();

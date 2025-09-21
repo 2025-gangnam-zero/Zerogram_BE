@@ -1,4 +1,4 @@
-import { ClientSession, Types } from "mongoose";
+import { ClientSession, DeleteResult, Types } from "mongoose";
 import { RoomMembership } from "../models";
 import { RoomMembershipState } from "../types";
 import { mongoDBErrorHandler } from "../utils";
@@ -45,32 +45,31 @@ class RoomMembershipRepository {
   async upsertMember(
     roomId: Types.ObjectId,
     userId: Types.ObjectId,
-    payload: {
-      role?: "owner" | "admin" | "member";
-      joinedAt?: Date;
-      lastReadSeq?: number;
-    } = {},
+    patch: { role?: "owner" | "admin" | "member" } = {},
     session?: ClientSession
-  ): Promise<void> {
+  ) {
     try {
-      await RoomMembership.updateOne(
+      return await RoomMembership.updateOne(
         { roomId, userId },
         {
-          $setOnInsert: {
-            role: payload.role ?? "member",
-            joinedAt: payload.joinedAt ?? new Date(),
-          },
-          $set: {
-            ...(typeof payload.lastReadSeq === "number"
-              ? { lastReadSeq: payload.lastReadSeq }
-              : {}),
-            ...(payload.role ? { role: payload.role } : {}),
-          },
+          $setOnInsert: { joinedAt: new Date(), lastReadSeq: 0 },
+          $set: { role: patch.role ?? "member" },
         },
         { upsert: true, session }
       );
     } catch (error) {
-      throw mongoDBErrorHandler("RoomMembershipRepository.upsertMember", error);
+      throw mongoDBErrorHandler("upsertMember", error);
+    }
+  }
+
+  async deleteAllByRoomId(
+    roomId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
+    try {
+      return await RoomMembership.deleteMany({ roomId }, { session });
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteAllByRoomId", error);
     }
   }
 

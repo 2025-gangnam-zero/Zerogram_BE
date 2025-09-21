@@ -1,9 +1,74 @@
-import { ClientSession, Types } from "mongoose";
+import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 import { Room } from "../models";
 import { RoomState, RoomNoticeInline } from "../types";
 import { mongoDBErrorHandler } from "../utils";
 
 class RoomRepository {
+  async createRoom(
+    dto: {
+      meetId: Types.ObjectId;
+      roomName: string;
+      imageUrl?: string;
+      description?: string;
+      memberCapacity?: number;
+    },
+    session?: ClientSession
+  ) {
+    try {
+      const doc = new Room({
+        ...dto,
+        lastMessage: "",
+        lastMessageAt: undefined,
+        seqCounter: 0,
+      });
+      return await doc.save({ session });
+    } catch (error) {
+      throw mongoDBErrorHandler("createRoom", error);
+    }
+  }
+
+  async findByMeetId(meetId: Types.ObjectId, session?: ClientSession | null) {
+    try {
+      return await Room.findOne({ meetId })
+        .session(session ?? null)
+        .lean();
+    } catch (error) {
+      throw mongoDBErrorHandler("findByMeetId", error);
+    }
+  }
+
+  async updateByMeetId(
+    meetId: Types.ObjectId,
+    patch: Partial<{
+      roomName: string;
+      imageUrl?: string;
+      description?: string;
+      memberCapacity?: number;
+    }>,
+    session?: ClientSession
+  ): Promise<UpdateResult> {
+    try {
+      return await Room.updateOne(
+        { meetId },
+        { $set: patch },
+        { session: session }
+      );
+    } catch (error) {
+      throw mongoDBErrorHandler("updateByMeetId", error);
+    }
+  }
+
+  async deleteById(
+    roomId: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<DeleteResult> {
+    try {
+      return await Room.deleteOne({ _id: roomId }, { session });
+    } catch (error) {
+      throw mongoDBErrorHandler("deleteById", error);
+    }
+  }
+
   // 단건
   async findById(
     roomId: Types.ObjectId,
@@ -13,17 +78,6 @@ class RoomRepository {
       return await Room.findById(roomId).session(session ?? null);
     } catch (error) {
       throw mongoDBErrorHandler("RoomRepository.findById", error);
-    }
-  }
-
-  async findByMeetId(
-    meetId: Types.ObjectId,
-    session?: ClientSession
-  ): Promise<RoomState | null> {
-    try {
-      return await Room.findOne({ meetId }).session(session ?? null);
-    } catch (error) {
-      throw mongoDBErrorHandler("RoomRepository.findByMeetId", error);
     }
   }
 

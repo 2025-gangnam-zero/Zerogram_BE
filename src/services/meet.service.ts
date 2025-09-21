@@ -12,7 +12,12 @@ import {
   InternalServerError,
   NotFoundError,
 } from "../errors";
-import { meetRepository } from "../repositories";
+import {
+  meetRepository,
+  messageRepository,
+  roomMembershipRepository,
+  roomRepository,
+} from "../repositories";
 import { userService, commentService } from "../services";
 import { MeetState } from "../types";
 import { deleteImage, deleteImages, toArray } from "../utils";
@@ -21,26 +26,61 @@ import { IMAGE_MAX_COUNT } from "../constants";
 class MeetService {
   // 모집글 생성
   async createMeet(newMeet: MeetCreateRequestDto): Promise<MeetResponseDto> {
+    const session = await mongoose.startSession();
     try {
-      const meet = await meetRepository.createMeet(newMeet);
+      console.log(newMeet);
 
-      if (!meet) {
-        throw new InternalServerError("모집글 생성 실패");
-      }
+      session.startTransaction();
 
-      const { _id: userId, nickname } = await userService.getUserById(
-        meet.userId
+      // 1) Meet 생성
+      const meet = await meetRepository.createMeet(newMeet, session);
+      if (!meet) throw new InternalServerError("모집글 생성 실패");
+
+      console.log("모집글", meet);
+
+      // 2) Room 생성 (Meet:Room = 1:1)
+      const room = await roomRepository.createRoom(
+        {
+          meetId: meet._id,
+          roomName: meet.title,
+          imageUrl: (meet.images ?? [])[0],
+          description: meet.description,
+        },
+        session
       );
 
-      return {
+      console.log("생성된 방 정보", room);
+      if (!room) throw new InternalServerError("채팅방 생성 실패");
+
+      // 3) 작성자 멤버십 owner 등록
+      await roomMembershipRepository.upsertMember(
+        room._id,
+        meet.userId,
+        { role: "owner" },
+        session
+      );
+
+      // 4) 응답 구성 (기존 형식 유지)
+      const { _id: userId, nickname } = await userService.getUserById(
+        meet.userId,
+        session
+      );
+
+      const result: MeetResponseDto = {
         ...meet,
         userId,
         nickname,
         crews: [{ userId, nickname }],
         comments: [],
       };
+
+      await session.commitTransaction();
+      return result;
     } catch (error) {
+      await session.abortTransaction();
       throw error;
+    } finally {
+      await session.endSession();
     }
   }
 
@@ -131,47 +171,49 @@ class MeetService {
     try {
       await session.withTransaction(
         async () => {
-          // 1) 권한 확인 (같은 세션으로 조회)
+          // 1) 권한 확인
           await this.checkAuthorMatched(meetId, userId, session);
 
-          // 2) 모집글 조회 (댓글 목록 포함)
+          // 2) Meet + 댓글 삭제(기존 로직)
           const meet = await this.getMeetAsDoc(meetId, session);
 
-          // 3) 댓글 삭제
           const comments = meet.comments ?? [];
           if (comments.length > 0) {
-            // comments 타입이 ObjectId[] 라면 그대로 사용
             const commentIds: Types.ObjectId[] = comments
-              .map((c: any) =>
-                // c가 ObjectId면 그대로, 서브도큐먼트면 c._id
-                c instanceof Types.ObjectId ? c : c?._id
-              )
+              .map((c: any) => (c instanceof Types.ObjectId ? c : c?._id))
               .filter(Boolean);
-
             if (commentIds.length > 0) {
               await commentService.deleteAllComments(commentIds, session);
             }
           }
 
-          // 4) 모집글의 이미지 삭제
+          // 2-1) 이미지 제거(기존)
           if (meet.images && meet.images.length > 0) {
             await Promise.all(
               meet.images.map((ex) => deleteImage(ex.split(".com/")[1]))
             );
           }
 
-          // 5) 모집글 삭제
+          // 3) 연계 Room 정리
+          const room = await roomRepository.findByMeetId(meetId, session);
+          if (room) {
+            await messageRepository.deleteAllByRoomId(room._id, session);
+            await roomMembershipRepository.deleteAllByRoomId(room._id, session);
+
+            const rr = await roomRepository.deleteById(room._id, session);
+            if (!rr.acknowledged)
+              throw new InternalServerError("채팅방 삭제 승인 실패");
+          }
+
+          // 4) 마지막으로 Meet 삭제
           await this.deleteMeetById(meetId, session);
         },
-        {
-          readConcern: { level: "snapshot" },
-          writeConcern: { w: "majority" },
-        }
+        { readConcern: { level: "snapshot" }, writeConcern: { w: "majority" } }
       );
     } catch (error) {
       throw error;
     } finally {
-      session.endSession();
+      await session.endSession();
     }
   }
 
@@ -250,6 +292,16 @@ class MeetService {
       await this.updateMeet(
         meetId,
         { ...rest, images: updatedImages },
+        session
+      );
+
+      // room 메타 동기화
+      await roomRepository.updateByMeetId(
+        meetId,
+        {
+          ...(rest.title ? { roomName: rest.title } : {}),
+          ...(updatedImages.length ? { imageUrl: updatedImages[0] } : {}),
+        },
         session
       );
 

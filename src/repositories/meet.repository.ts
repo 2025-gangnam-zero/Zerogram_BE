@@ -15,11 +15,18 @@ import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 
 class MeetRepository {
   // 모집글 생성
-  async createMeet(newMeet: MeetCreateRequestDto): Promise<MeetState> {
+  async createMeet(
+    newMeet: MeetCreateRequestDto,
+    session?: ClientSession
+  ): Promise<MeetState> {
     try {
-      const meet = await Meet.create(newMeet);
+      // A안) save + toObject
+      const created = await new Meet(newMeet).save({ session });
+      return created.toObject(); // ✅ 항상 Plain 반환
 
-      return meet;
+      // B안) create([doc], { session }) 사용 (트랜잭션 친화)
+      // const [created] = await Meet.create([newMeet], { session });
+      // return created.toObject();
     } catch (error) {
       throw mongoDBErrorHandler("createMeet", error);
     }
