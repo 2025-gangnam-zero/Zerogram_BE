@@ -25,7 +25,7 @@ RoomMembershipSchema.index({ roomId: 1, userId: 1 }, { unique: true });
 
 // 조회/통계용(선택)
 // RoomMembershipSchema.index({ userId: 1 });
-// RoomMembershipSchema.index({ roomId: 1, joinedAt: -1 });
+RoomMembershipSchema.index({ roomId: 1, joinedAt: -1 });
 
 export const RoomMembership = mongoose.model(
   "RoomMembership",

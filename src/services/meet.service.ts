@@ -22,6 +22,7 @@ import { userService, commentService } from "../services";
 import { MeetState } from "../types";
 import { deleteImage, deleteImages, toArray } from "../utils";
 import { IMAGE_MAX_COUNT } from "../constants";
+import { Room } from "../models";
 
 class MeetService {
   // 모집글 생성
@@ -387,34 +388,81 @@ class MeetService {
     }
   }
 
-  // 모집글에 참여자 추가 삭제
+  // ✅ 모집글 참여 토글 + RoomMembership 동기화(같은 세션)
   async toggleCrew(meetId: Types.ObjectId, userId: Types.ObjectId) {
     const session = await mongoose.startSession();
     try {
-      session.startTransaction();
+      await session.withTransaction(async () => {
+        // 1) 모집글 조회(같은 세션)
+        const meet = await this.getMeetAsDoc(meetId, session);
+        const crews: Types.ObjectId[] = (meet.crews ?? []) as any;
+        const isMember = crews.some((id) =>
+          (id as any)?.equals
+            ? (id as any).equals(userId)
+            : String(id) === String(userId)
+        );
 
-      // 모집글 조회 (같은 세션)
-      const meet = await this.getMeetAsDoc(meetId, session);
+        if (isMember) {
+          // 작성자는 본인 취소 불가
+          if (meet.userId?.equals?.(userId)) {
+            throw new ForbiddenError("작성자의 참여 취소 불가");
+          }
 
-      // ObjectId 비교는 equals 사용 (undefined 대비도 추가)
-      const crews: Types.ObjectId[] = (meet.crews ?? []) as any;
-      const isMember = crews.some((id) => id.equals(userId));
+          // 2) Meet에서 제거
+          await this.removeToCrews(meetId, userId, session);
 
-      if (isMember) {
-        if (meet.userId.equals(userId)) {
-          throw new ForbiddenError("작성자의 참여 취소 불가");
+          // 3) meetId -> room 조회
+          const room = await Room.findOne({ meetId }).session(session);
+          if (!room) throw new NotFoundError("연결된 채팅방(room) 없음");
+
+          // 4) RoomMembership 제거(같은 세션)
+          await roomMembershipRepository.deleteMember(
+            room._id,
+            userId,
+            session
+          );
+
+          // (선택) 인원 수 갱신을 저장형으로 유지하려면 Room.memberCount 필드가 있어야 함
+          // const count = await roomMembershipRepository.countByRoom(room._id, session);
+          // await Room.updateOne({ _id: room._id }, { $set: { memberCount: count } }, { session });
+
+          // 반환값은 트랜잭션 밖에서 처리하므로 여기선 아무 것도 하지 않음
+          (session as any).__toggleCrew__wasMember = true;
+        } else {
+          // 2) Meet에 추가
+          await this.addToCrews(meetId, userId, session);
+
+          // 3) meetId -> room 조회
+          const room = await Room.findOne({ meetId }).session(session);
+          if (!room) throw new NotFoundError("연결된 채팅방(room) 없음");
+
+          // 4) RoomMembership upsert(같은 세션)
+          await roomMembershipRepository.upsertMember(
+            room._id,
+            userId,
+            { role: "member" },
+            session
+          );
+
+          // (선택) 인원 수 저장형 갱신
+          const count = await roomMembershipRepository.countByRoom(
+            room._id,
+            session
+          );
+          await Room.updateOne(
+            { _id: room._id },
+            { $set: { memberCount: count } },
+            { session }
+          );
+
+          (session as any).__toggleCrew__wasMember = false;
         }
+      });
 
-        await this.removeToCrews(meetId, userId, session);
-      } else {
-        await this.addToCrews(meetId, userId, session);
-      }
-
-      await session.commitTransaction();
-      // 추가되었으면 true(신규), 삭제되었으면 false 반환
-      return !isMember;
+      // 트랜잭션 내 플래그로 신규 여부 반환
+      const wasMember = (session as any).__toggleCrew__wasMember as boolean;
+      return !wasMember; // true=새로 참여, false=삭제
     } catch (error) {
-      await session.abortTransaction();
       throw error;
     } finally {
       await session.endSession();
