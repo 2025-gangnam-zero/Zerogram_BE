@@ -1,5 +1,5 @@
 import { Types } from "mongoose";
-import { AttachmentState } from "./attachment.type";
+import { AttachmentState, IncomingAttachment } from "../types";
 
 export type ChatUser = {
   userId: string;
@@ -20,4 +20,21 @@ export type MessageState = {
   meta?: { readCount?: number };
   createdAt: Date;
   updatedAt: Date;
+};
+
+export type SendPayload = {
+  roomId: string;
+  text?: string; // 텍스트만/파일만/둘 다 허용
+  attachments?: IncomingAttachment[]; // 없으면 텍스트-only
+  serverId?: string; // (옵션) 클라 생성 시 전달, 아니면 서버가 생성
+};
+
+export type SendAck = {
+  ok: boolean;
+  id?: string; // ← messageId (_id)
+  serverId?: string; // ← 멱등키
+  createdAt?: string; // ← ISO (필드명 createdAt로 통일)
+  seq?: number; // 포함 (예)
+  attachments?: AttachmentState[];
+  error?: string;
 };

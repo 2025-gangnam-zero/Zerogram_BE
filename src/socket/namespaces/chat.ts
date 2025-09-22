@@ -1,17 +1,20 @@
-// src/socket/namespaces/chat.ts
 import type { Namespace, Socket } from "socket.io";
 import mongoose from "mongoose";
-import { ChatUser } from "../../types";
+import { AttachmentState, ChatUser, SendAck, SendPayload } from "../../types";
 import { messageService } from "../../services";
+import { deleteImages, uploadFromBuffer } from "../../utils";
+import { fileTypeFromBuffer } from "file-type";
 
-type SendPayload = { roomId: string; text: string };
-type SendAck = {
-  ok: boolean;
-  id?: string; // ← messageId (_id)
-  serverId?: string; // ← 멱등키
-  createdAt?: string; // ISO
-  error?: string;
-};
+const MAX_FILES = 4; // 🔸 요구사항
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 필요 시 조정
+const ALLOWED = [
+  // 🔸 허용 MIME
+  /^image\//,
+  /^video\//,
+  /^application\/pdf$/,
+  /^application\/zip$/,
+  /^text\//,
+];
 
 const makeId = () =>
   `svr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -37,51 +40,116 @@ export const registerChatNamespace = (nsp: Namespace) => {
     socket.on(
       "message:send",
       async (
-        { roomId, text }: SendPayload = {} as any,
+        {
+          roomId,
+          text,
+          attachments = [],
+          serverId: clientServerId,
+        }: SendPayload = {} as any,
         ack?: (r: SendAck) => void
       ) => {
+        const uploadedUrls: string[] = []; // 👈 롤백용(URL로 보관: deleteImages가 URL을 받음)
         try {
-          if (!roomId || !text || !text.trim()) {
-            return ack?.({ ok: false, error: "INVALID_PAYLOAD" });
+          if (!roomId) return ack?.({ ok: false, error: "INVALID_ROOM_ID" });
+
+          const trimmed = text?.trim();
+          const hasText = !!trimmed;
+          const hasFiles = Array.isArray(attachments) && attachments.length > 0;
+          if (!hasText && !hasFiles) {
+            return ack?.({ ok: false, error: "EMPTY_CONTENT" });
+          }
+          if (hasFiles && attachments.length > MAX_FILES) {
+            return ack?.({ ok: false, error: "TOO_MANY_FILES" });
           }
 
-          const serverId = makeId(); // 멱등키
+          const uploaded: AttachmentState[] = [];
+          if (hasFiles) {
+            for (const a of attachments) {
+              if (!a?.data || typeof a.size !== "number") {
+                return ack?.({ ok: false, error: "INVALID_FILE" });
+              }
+              if (a.size > MAX_FILE_SIZE) {
+                return ack?.({
+                  ok: false,
+                  error: `FILE_TOO_LARGE:${a.fileName}`,
+                });
+              }
+
+              const buf = Buffer.from(a.data);
+              const sniff = await fileTypeFromBuffer(buf);
+              const mime = sniff?.mime || a.contentType || "";
+              const allowed = ALLOWED.some((re) => re.test(mime));
+              if (!allowed) {
+                return ack?.({
+                  ok: false,
+                  error: `BLOCKED_MIME:${mime || "unknown"}`,
+                });
+              }
+
+              // 👇 멀터 대신 버퍼 업로드
+              const { fileUrl } = await uploadFromBuffer({
+                buffer: buf,
+                fileName: a.fileName,
+                contentType: mime,
+                // prefix: "chat", // 필요 시 바꾸세요("profiles" 등)
+              });
+
+              uploadedUrls.push(fileUrl);
+
+              uploaded.push({
+                fileUrl,
+                fileName: a.fileName,
+                contentType: mime,
+                size: a.size,
+                width: a.width,
+                height: a.height,
+              });
+            }
+          }
+
+          const serverId = clientServerId?.trim() || makeId();
           const roomObjId = new mongoose.Types.ObjectId(roomId);
           const authorObjId = new mongoose.Types.ObjectId(author.userId);
 
-          // 트랜잭션 내부: seq 증가 → message 저장 → room 메타 갱신
           const saved = await messageService.sendMessage({
             roomId: roomObjId,
             authorId: authorObjId,
-            author, // 스냅샷
+            author,
             serverId,
-            text: String(text),
-            attachments: [], // 필요 시 확장
+            text: hasText ? String(trimmed) : undefined,
+            attachments: uploaded,
           });
-          // saved는 ChatMessageDTO { id, serverId, roomId, authorId, author, text, attachments, seq, createdAtIso, meta }
 
-          // 브로드캐스트: 클라 ChatMessage와 정합
           nsp.to(roomId).emit("message:new", {
-            id: saved.id, // ← messageId (_id)
-            serverId: saved.serverId, // ← 멱등키
+            id: saved.id,
+            serverId: saved.serverId,
             roomId: saved.roomId,
             authorId: saved.authorId,
-            author: saved.author, // 저장된 스냅샷 사용
+            author: saved.author,
             text: saved.text ?? "",
             attachments: saved.attachments ?? [],
             seq: saved.seq,
-            createdAt: saved.createdAtIso, // ISO 문자열
+            createdAt: saved.createdAtIso,
             meta: saved.meta,
           });
 
-          // ACK에도 id 포함
           return ack?.({
             ok: true,
             id: saved.id,
             serverId: saved.serverId,
             createdAt: saved.createdAtIso,
+            seq: saved.seq, // ✅ 포함
+            attachments: saved.attachments ?? uploaded,
           });
         } catch (err: any) {
+          if (uploadedUrls.length) {
+            try {
+              await deleteImages(uploadedUrls);
+            } catch (e) {
+              console.error("rollback(deleteImages) error:", e);
+            }
+          }
+          console.error("message:send error:", err);
           return ack?.({ ok: false, error: err?.message ?? "INTERNAL_ERROR" });
         }
       }
