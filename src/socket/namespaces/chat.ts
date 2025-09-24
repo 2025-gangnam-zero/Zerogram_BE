@@ -3,7 +3,24 @@ import mongoose from "mongoose";
 import { AttachmentState, ChatUser, SendAck, SendPayload } from "../../types";
 import { messageService } from "../../services";
 import { deleteImages, uploadFromBuffer } from "../../utils";
-import { fileTypeFromBuffer } from "file-type";
+// ❌ 정적 import 제거: import { fileTypeFromBuffer } from "file-type";
+
+// ✅ ESM 전용 패키지(file-type)를 CJS 빌드에서 쓰기 위한 호환 래퍼
+type FileTypeResult = { ext: string; mime: string };
+let _fileTypeFromBuffer:
+  | ((buf: Buffer) => Promise<FileTypeResult | undefined>)
+  | null = null;
+
+async function fileTypeFromBufferCompat(buf: Buffer) {
+  if (!_fileTypeFromBuffer) {
+    const mod: any = await import("file-type"); // ESM 동적 import
+    _fileTypeFromBuffer = mod.fileTypeFromBuffer;
+    if (typeof _fileTypeFromBuffer !== "function") {
+      throw new Error("file-type: fileTypeFromBuffer not available");
+    }
+  }
+  return _fileTypeFromBuffer(buf);
+}
 
 const MAX_FILES = 4; // 🔸 요구사항
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 필요 시 조정
@@ -76,7 +93,8 @@ export const registerChatNamespace = (nsp: Namespace) => {
               }
 
               const buf = Buffer.from(a.data);
-              const sniff = await fileTypeFromBuffer(buf);
+              // ❌ const sniff = await fileTypeFromBuffer(buf);
+              const sniff = await fileTypeFromBufferCompat(buf); // ✅ 교체
               const mime = sniff?.mime || a.contentType || "";
               const allowed = ALLOWED.some((re) => re.test(mime));
               if (!allowed) {
@@ -91,7 +109,7 @@ export const registerChatNamespace = (nsp: Namespace) => {
                 buffer: buf,
                 fileName: a.fileName,
                 contentType: mime,
-                // prefix: "chat", // 필요 시 바꾸세요("profiles" 등)
+                // prefix: "chat", // 필요 시 변경
               });
 
               uploadedUrls.push(fileUrl);
