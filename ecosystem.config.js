@@ -6,7 +6,7 @@ module.exports = {
       script: "dist/server.js",
       instances: "max",
       exec_mode: "cluster",
-      node_args: "-r dotenv/config",
+      node_args: ["-r", "dotenv/config"],
       env: {
         NODE_ENV: "prod",
         PORT: "4000",
