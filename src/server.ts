@@ -18,6 +18,13 @@ dotenv.config({
 
 const app = express();
 
+const server = http.createServer(app);
+
+// swagger ui 연결
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+console.log(CLIENT_URL);
+
 app.use(
   cors({
     origin: [`${CLIENT_URL}`, `http://localhost:3000`],
@@ -27,15 +34,6 @@ app.use(
     credentials: true,
   })
 );
-
-app.options("*", cors());
-
-const server = http.createServer(app);
-
-// swagger ui 연결
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
-console.log(CLIENT_URL);
 
 app.use(express.json());
 
