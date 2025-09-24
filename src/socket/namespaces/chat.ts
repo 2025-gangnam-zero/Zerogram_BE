@@ -13,7 +13,7 @@ let _fileTypeFromBuffer:
 
 async function fileTypeFromBufferCompat(buf: Buffer) {
   if (!_fileTypeFromBuffer) {
-    const mod: any = await import("file-type"); // ESM 동적 import
+    const mod: any = await eval('import("file-type")'); // ESM 동적 import
     _fileTypeFromBuffer = mod.fileTypeFromBuffer;
     if (typeof _fileTypeFromBuffer !== "function") {
       throw new Error("file-type: fileTypeFromBuffer not available");

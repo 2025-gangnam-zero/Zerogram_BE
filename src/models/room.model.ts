@@ -31,8 +31,4 @@ const RoomSchema = new Schema<RoomState>(
 RoomSchema.index({ updatedAt: -1 });
 RoomSchema.index({ lastMessageAt: -1 });
 
-// 인덱스
-RoomSchema.index({ updatedAt: -1 });
-RoomSchema.index({ lastMessageAt: -1 });
-
 export const Room = mongoose.model("Room", RoomSchema);
