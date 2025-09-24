@@ -27,7 +27,7 @@ console.log(CLIENT_URL);
 
 app.use(
   cors({
-    origin: [`${CLIENT_URL}`, `http://localhost:3000`, `http://localhost:3001`],
+    origin: [`${CLIENT_URL}`, `http://localhost:3000`],
     // 허용할 HTTP 메소드 설정
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     // 자격 증명(credentials)을 포함한 요청 허용
