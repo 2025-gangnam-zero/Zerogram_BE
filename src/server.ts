@@ -8,6 +8,7 @@ import swaggerUi from "swagger-ui-express";
 import swaggerDocument from "./docs/swagger.json";
 import { CLIENT_URL, PORT } from "./constants";
 import http from "http";
+import { initSocket } from "./socket";
 
 const env = process.env.NODE_ENV || "local";
 
@@ -44,6 +45,15 @@ mongoose.Promise = Promise;
 
 const MONGODB_URL = process.env.MONGODB_URL || "";
 
+// --- Socket.IO 붙이기 ---
+const corsOrigins = [
+  `${CLIENT_URL}`,
+  "http://localhost:3000",
+  "http://localhost:3001",
+].filter(Boolean);
+
+initSocket(server, { path: "/ws", corsOrigins });
+
 mongoose
   .connect(MONGODB_URL)
   .then(() => {
@@ -51,6 +61,7 @@ mongoose
     server.listen(PORT, () => {
       console.log(`서버가 ${PORT} 포트에 연결됨`);
       console.log(`스웨거가 ${PORT} 포트에 연결됨`);
+      console.log(`Socket.IO '/chat' at '/ws' 준비 완료`);
     });
   })
   .catch((error) => {

@@ -9,6 +9,7 @@ export interface MeetState {
   images?: string[];
   workout_type: WorkoutType;
   location: LocationType;
+  roomId: Types.ObjectId;
   crews: Types.ObjectId[];
   comments: Types.ObjectId[];
   createdAt: Date;

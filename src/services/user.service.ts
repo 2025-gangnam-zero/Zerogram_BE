@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { ClientSession, Types } from "mongoose";
 import {
   ConflictError,
   InternalServerError,
@@ -11,9 +11,12 @@ import { checkPassword, deleteImage, hashPassword } from "../utils";
 
 class UserService {
   // _id를 이용한 사용자 조회
-  async getUserById(_id: Types.ObjectId): Promise<UserState> {
+  async getUserById(
+    _id: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<UserState> {
     try {
-      const user = await userRepository.getUserById(_id);
+      const user = await userRepository.getUserById(_id, session);
 
       if (!user) {
         throw new NotFoundError("사용자 조회 실패");

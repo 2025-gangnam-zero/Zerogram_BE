@@ -21,6 +21,7 @@ export interface MeetResponseDto {
   images?: string[];
   workout_type: WorkoutType;
   location: LocationType;
+  roomId: Types.ObjectId;
   crews: CrewType[];
   comments: CommentResponseDto[];
   createdAt: Date;

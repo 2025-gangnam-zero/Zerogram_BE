@@ -1,4 +1,4 @@
-import { DeleteResult, Types, UpdateResult } from "mongoose";
+import { ClientSession, DeleteResult, Types, UpdateResult } from "mongoose";
 import { User } from "../models";
 import { UserState, UserUpdateDto } from "../types";
 import { mongoDBErrorHandler } from "../utils";
@@ -16,9 +16,12 @@ class UserRepository {
   }
 
   // objectId를 이용한 사용자 조회
-  async getUserById(_id: Types.ObjectId): Promise<UserState | null> {
+  async getUserById(
+    _id: Types.ObjectId,
+    session?: ClientSession
+  ): Promise<UserState | null> {
     try {
-      const user = await User.findById({ _id }).lean();
+      const user = await User.findById({ _id }, null, { session }).lean();
 
       return user;
     } catch (error) {
