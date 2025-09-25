@@ -73,6 +73,10 @@ const safe = (s: string) => s.replace(/[^\w.\-]+/g, "_");
 /** ─────────────────────────────────────────────────────────
  * MIME 타입 결정: 제공값 > file-type(from buffer) > 확장자 > octet
  * ───────────────────────────────────────────────────────── */
+let _fileTypeFromBuffer:
+  | ((buf: Buffer) => Promise<{ mime?: string } | undefined>)
+  | null = null;
+
 async function decideContentType(
   buffer: Buffer,
   fileName: string,
@@ -80,12 +84,12 @@ async function decideContentType(
 ): Promise<string> {
   if (hint) return hint;
 
-  // 1) file-type을 ESM 동적 import로 안전 사용
   try {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore - TS가 ESM 동적 import를 추론 못할 수 있음
-    const { fileTypeFromBuffer } = await import("file-type");
-    const ft = await fileTypeFromBuffer(buffer);
+    if (!_fileTypeFromBuffer) {
+      const mod: any = await import("file-type");
+      _fileTypeFromBuffer = mod.fileTypeFromBuffer;
+    }
+    const ft = await _fileTypeFromBuffer!(buffer);
     if (ft?.mime) return ft.mime;
   } catch {
     // file-type 미설치/미지원이어도 무시
