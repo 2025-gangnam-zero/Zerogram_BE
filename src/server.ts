@@ -23,14 +23,26 @@ const server = http.createServer(app);
 // swagger ui 연결
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
-console.log(CLIENT_URL);
+const corsOrigins = Array.from(
+  new Set(
+    [
+      CLIENT_URL, // .env에서 가져온 배포/프론트 도메인 (예: https://app.example.com)
+      "http://localhost:3000",
+      "http://localhost:3001",
+    ].filter(Boolean)
+  )
+);
 
 app.use(
   cors({
-    origin: [`${CLIENT_URL}`, `http://localhost:3000`],
-    // 허용할 HTTP 메소드 설정
+    origin: (origin, cb) => {
+      // 모바일 앱 file:// 등 origin 없는 경우 허용
+      if (!origin) return cb(null, true);
+      // 정확히 일치만 허용(와일드카드 필요하면 정규식으로 확장)
+      if (corsOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS_BLOCKED_ORIGIN:${origin}`), false);
+    },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    // 자격 증명(credentials)을 포함한 요청 허용
     credentials: true,
   })
 );
@@ -41,17 +53,13 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/", routes());
 
+app.get("/healthz", (_req, res) => res.status(200).json({ ok: true }));
+
 mongoose.Promise = Promise;
 
 const MONGODB_URL = process.env.MONGODB_URL || "";
 
 // --- Socket.IO 붙이기 ---
-const corsOrigins = [
-  `${CLIENT_URL}`,
-  "http://localhost:3000",
-  "http://localhost:3001",
-].filter(Boolean);
-
 initSocket(server, { path: "/ws", corsOrigins });
 
 mongoose
