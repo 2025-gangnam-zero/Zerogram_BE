@@ -51,7 +51,7 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/", routes());
+app.use("/api/", routes());
 
 app.get("/healthz", (_req, res) => res.status(200).json({ ok: true }));
 

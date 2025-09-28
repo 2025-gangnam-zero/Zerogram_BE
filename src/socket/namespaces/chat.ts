@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import { AttachmentState, ChatUser, SendAck, SendPayload } from "../../types";
 import { messageService } from "../../services";
 import { deleteImages, uploadFromBuffer } from "../../utils";
+import { socketRooms } from "../../socket/socketRooms";
+import { Room, RoomMembership } from "../../models";
 // ❌ 정적 import 제거: import { fileTypeFromBuffer } from "file-type";
 
 // ✅ ESM 전용 패키지(file-type)를 CJS 빌드에서 쓰기 위한 호환 래퍼
@@ -40,6 +42,11 @@ export const registerChatNamespace = (nsp: Namespace) => {
   nsp.on("connection", (socket: Socket) => {
     const sid = (socket.data as any).sessionId as string;
     const author = ((socket.data as any).user || { id: sid }) as ChatUser;
+
+    // ✅ 개인 알림 채널 조인 (접속자 전용)
+    if (author?.userId) {
+      socket.join(socketRooms.user(author.userId));
+    }
 
     socket.on("room:join", ({ roomId } = {} as any) => {
       if (!roomId) return;
@@ -150,6 +157,35 @@ export const registerChatNamespace = (nsp: Namespace) => {
             createdAt: saved.createdAtIso,
             meta: saved.meta,
           });
+
+          // ✅ 추가: “방 단위 1개 알림” 최신 합산값을 멤버에게 전송
+          try {
+            const room = await Room.findById(roomId).lean();
+            if (room) {
+              const members = await RoomMembership.find({
+                roomId: room._id,
+              }).lean();
+              for (const mem of members) {
+                const unread = Math.max(
+                  0,
+                  (room.seqCounter ?? 0) - (mem.lastReadSeq ?? 0)
+                );
+                nsp
+                  .to(socketRooms.user(String(mem.userId)))
+                  .emit("notify:update", {
+                    roomId: String(room._id),
+                    roomName: room.roomName,
+                    lastMessage: room.lastMessage,
+                    lastMessageAt: room.lastMessageAt
+                      ? new Date(room.lastMessageAt).toISOString()
+                      : undefined,
+                    unread,
+                  });
+              }
+            }
+          } catch (e) {
+            console.error("[notify] broadcast error:", e);
+          }
 
           return ack?.({
             ok: true,

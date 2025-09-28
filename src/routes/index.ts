@@ -5,6 +5,7 @@ import adminRoute from "./admin.route";
 import meetingRoute from "./meeting.route";
 import meetRoute from "./meet.route";
 import roomRoute from "./room.route";
+import notificationRoute from "./notification.route";
 
 export default () => {
   const router = Router();
@@ -16,5 +17,6 @@ export default () => {
   router.use("/", meetRoute());
   router.use("/", roomRoute());
 
+  router.use("/", notificationRoute());
   return router;
 };

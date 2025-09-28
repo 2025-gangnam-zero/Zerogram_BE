@@ -6,6 +6,8 @@ import {
   roomMembershipService,
   roomService,
 } from "../services";
+import { getIo } from "../socket/io";
+import { socketRooms } from "../socket/socketRooms";
 
 // 내 방 목록
 export const getMyRooms = async (req: Request, res: Response) => {
@@ -182,6 +184,7 @@ export const listRoomMembers = async (req: Request, res: Response) => {
 
 // 읽음 커밋
 export const commitRead = async (req: Request, res: Response) => {
+  const userId = req.user._id;
   const { roomid } = req.params;
   const { lastReadMessageId, lastReadSeq } = req.body as {
     lastReadMessageId?: string;
@@ -208,6 +211,27 @@ export const commitRead = async (req: Request, res: Response) => {
       req.user._id as Types.ObjectId,
       payload
     );
+
+    // ✅ 본인에게 즉시 unread:0 반영 (UX 동기화)
+    try {
+      const room = await roomService.getRoom(roomId, userId);
+      if (room) {
+        const io = getIo();
+        io.of("/chat")
+          .to(socketRooms.user(String(req.user._id)))
+          .emit("notify:update", {
+            roomId: String(room.id),
+            roomName: room.roomName,
+            lastMessage: room.lastMessage,
+            lastMessageAt: room.lastMessageAt
+              ? new Date(room.lastMessageAt).toISOString()
+              : undefined,
+            unread: 0,
+          });
+      }
+    } catch (e) {
+      console.error("[notify] push self zero error:", e);
+    }
 
     res.status(200).json({
       success: true,
