@@ -1,7 +1,7 @@
 import type { Namespace, Socket } from "socket.io";
 import mongoose from "mongoose";
 import { AttachmentState, ChatUser, SendAck, SendPayload } from "../../types";
-import { messageService } from "../../services";
+import { messageService, roomMembershipService } from "../../services";
 import { deleteImages, uploadFromBuffer } from "../../utils";
 // ❌ 정적 import 제거: import { fileTypeFromBuffer } from "file-type";
 
@@ -36,24 +36,114 @@ const ALLOWED = [
 const makeId = () =>
   `svr-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
+/** ─────────────────────────────────────────────────────────
+ * 로깅/중복조인 유틸
+ * ───────────────────────────────────────────────────────── */
+function makeLogger(socket: Socket) {
+  const sid = socket.id;
+  const uid = (socket.data as any)?.user?.userId ?? "anon";
+  const pfx = `[chat][sid=${sid}][uid=${uid}]`;
+  return {
+    info: (...args: any[]) => console.log(pfx, ...args),
+    warn: (...args: any[]) => console.warn(pfx, ...args),
+    error: (...args: any[]) => console.error(pfx, ...args),
+  };
+}
+
+function getJoinedRoomsSet(socket: Socket): Set<string> {
+  if (!(socket.data as any).joinedRooms) {
+    (socket.data as any).joinedRooms = new Set<string>();
+  }
+  return (socket.data as any).joinedRooms as Set<string>;
+}
+
+/** (옵션) 멤버십 검증 훅 포인트
+ * 실제 서비스 함수가 준비되면 아래 형태로 주입해서 사용하세요.
+ * ex) if (await roomMembershipService.isMember(roomId, author.userId)) { ... }
+ */
+// async function isMember(roomId: string, userId: string): Promise<boolean> {
+//   return true;
+// }
+
 export const registerChatNamespace = (nsp: Namespace) => {
   nsp.on("connection", (socket: Socket) => {
+    const log = makeLogger(socket);
+
     const sid = (socket.data as any).sessionId as string;
     const author = ((socket.data as any).user || { id: sid }) as ChatUser;
 
-    socket.on("room:join", ({ roomId } = {} as any) => {
-      if (!roomId) return;
-      socket.join(roomId);
-      socket.to(roomId).emit("room:userJoined", { roomId, author });
-    });
+    // 개인 알림 룸(join 은 그대로 유지)
+    // const userRoom = `user:${author.userId}`;
+    // socket.join(userRoom);
+    // log.info("joined personal room", userRoom);
 
-    socket.on("room:leave", ({ roomId } = {} as any) => {
-      if (!roomId) return;
-      socket.leave(roomId);
-      socket.to(roomId).emit("room:userLeft", { roomId, author });
-    });
+    /** ───────────────── room:join ───────────────── */
+    socket.on(
+      "room:join",
+      async ({ roomId } = {} as any, ack?: (r: SendAck) => void) => {
+        try {
+          if (!roomId || !mongoose.isValidObjectId(roomId)) {
+            return ack?.({ ok: false, error: "INVALID_ROOM_ID" });
+          }
 
-    // 메시지 전송 + DB 영속화
+          const joined = getJoinedRoomsSet(socket);
+          if (joined.has(roomId)) {
+            // 멱등 처리: 이미 조인되어 있으면 노옵
+            return ack?.({ ok: true, message: "ALREADY_JOINED" } as any);
+          }
+
+          // (옵션) 멤버십 검증: 서비스 함수 연결 시 여기에 추가
+          const ok = await roomMembershipService.isMember(
+            new mongoose.Types.ObjectId(roomId),
+            new mongoose.Types.ObjectId(author.userId)
+          );
+          if (!ok) return ack?.({ ok: false, error: "FORBIDDEN_NOT_A_MEMBER" });
+
+          await socket.join(roomId);
+          joined.add(roomId);
+
+          // 본인 제외 브로드캐스트
+          socket.to(roomId).emit("room:userJoined", { roomId, author });
+
+          ack?.({ ok: true });
+          log.info("room:join ok", roomId);
+        } catch (err: any) {
+          log.error("room:join error:", err?.message ?? err);
+          ack?.({ ok: false, error: "JOIN_FAILED" });
+        }
+      }
+    );
+
+    /** ───────────────── room:leave ───────────────── */
+    socket.on(
+      "room:leave",
+      async ({ roomId } = {} as any, ack?: (r: SendAck) => void) => {
+        try {
+          if (!roomId || !mongoose.isValidObjectId(roomId)) {
+            return ack?.({ ok: false, error: "INVALID_ROOM_ID" });
+          }
+
+          const joined = getJoinedRoomsSet(socket);
+          if (!joined.has(roomId)) {
+            // 조인 상태가 아니면 노옵
+            return ack?.({ ok: true, message: "NOT_JOINED" } as any);
+          }
+
+          await socket.leave(roomId);
+          joined.delete(roomId);
+
+          socket.to(roomId).emit("room:userLeft", { roomId, author });
+
+          ack?.({ ok: true });
+          log.info("room:leave ok", roomId);
+        } catch (err: any) {
+          log.error("room:leave error:", err?.message ?? err);
+          ack?.({ ok: false, error: "LEAVE_FAILED" });
+        }
+      }
+    );
+
+    /** ───────────── 메시지 전송 + DB 영속화 ───────────── */
     socket.on(
       "message:send",
       async (
@@ -67,7 +157,17 @@ export const registerChatNamespace = (nsp: Namespace) => {
       ) => {
         const uploadedUrls: string[] = []; // 👈 롤백용(URL로 보관: deleteImages가 URL을 받음)
         try {
-          if (!roomId) return ack?.({ ok: false, error: "INVALID_ROOM_ID" });
+          if (!roomId || !mongoose.isValidObjectId(roomId)) {
+            return ack?.({ ok: false, error: "INVALID_ROOM_ID" });
+          }
+
+          const isMem = await roomMembershipService.isMember(
+            new mongoose.Types.ObjectId(roomId),
+            new mongoose.Types.ObjectId(author.userId)
+          );
+          if (!isMem) {
+            return ack?.({ ok: false, error: "FORBIDDEN_NOT_A_MEMBER" });
+          }
 
           const trimmed = text?.trim();
           const hasText = !!trimmed;
