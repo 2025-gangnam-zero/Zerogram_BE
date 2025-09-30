@@ -8,6 +8,7 @@ import commentService from "./comment.service";
 import roomService from "./room.service";
 import roomMembershipService from "./room-membership.service";
 import messageService from "./message.service";
+import notificationService from "./notification.service";
 
 export {
   dietService,
@@ -20,4 +21,5 @@ export {
   roomService,
   roomMembershipService,
   messageService,
+  notificationService,
 };

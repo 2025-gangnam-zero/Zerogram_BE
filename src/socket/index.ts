@@ -8,6 +8,7 @@ import { registerChatNamespace } from "./namespaces/chat";
 import { ACCESS_TOKEN_EXPIRESIN } from "../constants";
 import { userService, userSessionService } from "../services";
 import { jwtSign, jwtVerify } from "../utils";
+import { setIo } from "./io";
 
 export const initSocket = (
   httpServer: HttpServer,
@@ -20,6 +21,7 @@ export const initSocket = (
     path,
     cors: { origin: corsOrigins, credentials: true },
   });
+  setIo(io); // 전역 io 등록
 
   const chat = io.of("/chat");
 

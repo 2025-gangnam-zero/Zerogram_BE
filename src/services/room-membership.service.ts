@@ -8,6 +8,7 @@ import {
 import { ForbiddenError, NotFoundError } from "../errors";
 import { RoomMembershipState } from "../types";
 import meetService from "./meet.service";
+import { RoomMembership } from "../models";
 
 class RoomMembershipService {
   // 멤버십 단건 조회
@@ -135,7 +136,7 @@ class RoomMembershipService {
           roomId,
           session
         );
-        
+
         await roomRepository.updateById(
           roomId,
           { memberCount: count },
@@ -163,6 +164,14 @@ class RoomMembershipService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async isMember(roomId: Types.ObjectId, userId: Types.ObjectId) {
+    const doc = await RoomMembership.findOne({ roomId, userId })
+      .select({ _id: 1 })
+      .lean()
+      .exec();
+    return !!doc;
   }
 }
 

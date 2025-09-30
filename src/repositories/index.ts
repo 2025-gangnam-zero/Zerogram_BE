@@ -8,6 +8,7 @@ import commentRepository from "./comment.repository";
 import roomRepository from "./room.repository";
 import roomMembershipRepository from "./room-member.repository";
 import messageRepository from "./message.repository";
+import notificationRepository from "./notification.repository";
 
 export {
   dietRepository,
@@ -20,4 +21,5 @@ export {
   roomRepository,
   roomMembershipRepository,
   messageRepository,
+  notificationRepository,
 };
